@@ -130,6 +130,100 @@ This ensures the budget law is not just a formal inequality but has **physical m
 
 ---
 
+## Convergence Theorems: Minimal Conditions for Global Asymptotic Coherence
+
+We derive the "smallest honest" conditions under which $D_k \to 0$ (or to a bound) for general nonlinear $S$.
+
+We work with the canonical law:
+
+$D_{k+1} \le D_k - S(D_k,B_k) + E_k$
+
+with:
+- $D_k \ge 0$,
+- $0 \le S(D,B) \le D$,
+- $S$ monotone non-decreasing in $D$ and $B$,
+- disturbance policy DP0/DP1/DP2/DP3 (see [`4_budget_debt_law.md`](4_budget_debt_law.md)).
+
+### C.1 Bounded-debt theorem (global; minimal)
+
+**Assume:**
+1. $E_k \le \bar{E}$ (DP1/DP2/DP3 implies this via bound).
+2. There exists $B_{min} > 0$ and $\alpha \in (0,1)$ such that for all $D \ge 0$:
+   $S(D, B) \ge (1-\alpha)D \quad \text{whenever } B \ge B_{min}.$
+   Equivalently,
+   $D - S(D,B) \le \alpha D \quad (B \ge B_{min}).$
+
+**Then:** whenever $B_k \ge B_{min}$ for all sufficiently large $k$:
+
+$\limsup_{k\to\infty} D_k \le \frac{\bar{E}}{1-\alpha}.$
+
+This is the engine-agnostic stability envelope, and it holds for nonlinear $S$.
+
+### C.2 Asymptotic coherence to zero (DP0, no disturbance)
+
+**Assume DP0:** $E_k \equiv 0$.
+
+Minimal sufficient condition for $D_k \to 0$ is: **uniform fractional service eventually**.
+
+There exists $B_{min} > 0$ and $\eta \in (0,1)$ such that for all $D > 0$:
+
+$S(D,B) \ge \eta D \quad \text{whenever } B \ge B_{min}.$
+
+If $B_k \ge B_{min}$ for all sufficiently large $k$, then:
+
+$D_{k+1} \le (1-\eta)D_k \quad\Rightarrow\quad D_k \to 0 \text{ exponentially.}$
+
+This is the clean "global asymptotic coherence" condition.
+
+### C.3 Asymptotic coherence with vanishing disturbance
+
+If $E_k \to 0$ (or $\sum_k E_k < \infty$), and the same fractional service condition holds eventually, then:
+
+$D_k \to 0.$
+
+A standard sufficient condition:
+- DP2 with event schedule that eventually stops disturbances,
+- or DP3 where modeled error decays under refinement.
+
+### C.4 "Integral" condition (weaker, more general)
+
+If you can't guarantee uniform fractional service, you can still get convergence if service is **persistently positive** away from zero.
+
+**Assume DP0 and:**
+
+For every $\varepsilon > 0$, there exists $s_\varepsilon > 0$ such that:
+
+$S(D,B_{min}) \ge s_\varepsilon \quad \forall D \ge \varepsilon.$
+
+Then debt cannot stall above $\varepsilon$. It must eventually enter $[0, \varepsilon]$. Since $\varepsilon$ is arbitrary:
+
+$D_k \to 0.$
+
+This is a minimal "no-flat-plateaus" condition on $S$.
+
+### C.5 Necessary condition (what must be true)
+
+If DP0 and $D_k \to 0$ for all initial debts, then it is necessary that:
+
+$S(D,B_{min}) > 0 \quad \forall D>0$
+
+for some persistent budget level $B_{min}$ that occurs infinitely often.
+
+If $S(D,B)=0$ on any interval $D \in (\varepsilon, M)$ for the budgets you actually use, the system can get stuck there forever. No theorem can save you.
+
+### C.6 What CK-0 should record for these theorems to apply
+
+To make these convergence claims auditable, CK-0 receipts/policy headers must pin:
+- whether DP0/DP1/DP2/DP3 is active,
+- bounds $\bar{E}$ (or event bounds),
+- a service envelope certificate, e.g.:
+  - $\alpha$ and $B_{min}$ such that $D-S(D,B) \le \alpha D$ for $B \ge B_{min}$,
+  - or a declared $S(D,B_{min}) \ge s_\varepsilon$ schedule (less common).
+
+This is how "math claims" become "verifier-checkable claims."
+
+---
+
 ## Receipt Obligations
 
 | Field | Type | Description |

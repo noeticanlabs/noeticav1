@@ -91,6 +91,43 @@ For any `x ∈ X` such that `I(x) = true`:
 
 ---
 
+## Contract Manifold
+
+Define the **contract manifold** $M \subseteq X$:
+
+$M := { x \in X | r_k(x) = 0 \text{ for all contracts } k \text{ with } A_k(x) = true }$
+
+**Properties:**
+- $V(x) = 0 \Leftrightarrow x \in M$
+- $M$ is the set of all fully coherent states
+- CK-0 law ensures trajectory stays bounded near $M$ under service
+
+**Interpretation:** CK-0 is a dissipative dynamical system constrained toward a manifold.
+
+---
+
+## Applicability and Activation Semantics
+
+Each contract $k$ declares an applicability predicate:
+
+$A_k : X \to {\text{true}, \text{false}}$
+
+### Activation Semantics Rule (C1)
+
+Contract activation/deactivation MUST be handled by ONE of:
+
+**Option A (Static - recommended):** The contract set $\mathcal{K}$ and all applicability predicates $A_k$ MUST be static for the duration of a run. No activation changes are permitted.
+
+**Option B (Dynamic with disturbance accounting):** If $A_k(x)$ may change between steps, then for any step where activation changes:
+
+$E_k \ge |V(x_{k+1}) - V(x_k)|_{active\_change}$
+
+Where the right-hand side is the portion of violation change attributable solely to contract activation/deactivation.
+
+**Rationale:** Without explicit activation semantics, the violation functional V may exhibit discontinuities that break the dissipative system interpretation. This rule ensures continuity or explicit disturbance accounting.
+
+---
+
 ## Determinism Requirements
 
 CK-0 requires that `V(x)` be:

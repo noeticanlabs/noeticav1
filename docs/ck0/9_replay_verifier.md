@@ -143,6 +143,27 @@ def verify(ledger: List[Receipt], spec: CK0Spec) -> VerificationResult:
 
 ---
 
+## Explicit Rejection Criteria
+
+The verifier MUST reject (abort) if ANY of the following conditions hold:
+
+| Condition | Description |
+|-----------|-------------|
+| `canonical_arith_impl_differs` | Canonical arithmetic implementation differs from declared |
+| `rounding_mode_id_differs` | Rounding mode differs from policy ID |
+| `contract_set_id_differs` | Contract set ID differs from initial declaration |
+| `service_policy_id_differs` | Service policy ID differs from declared |
+| `disturbance_policy_violated` | Disturbance E_k violates declared DP0/DP1/DP2/DP3 policy |
+| `E_bar_exceeded` | E_k exceeds declared Ē bound (DP1) |
+| `E_event_bound_exceeded` | E_k exceeds event-type bound β(t_k) (DP2) |
+| `E_model_recompute_mismatch` | Recomputed E_k differs from logged (DP3) |
+| `Lipschitz_bound_violated` | Service law exceeds declared Lipschitz bound on domain |
+| `activation_change_unaccounted` | Contract activation change without disturbance accounting (if dynamic) |
+
+**Rationale:** These explicit rejection criteria prevent implementation drift and ensure replay stability.
+
+---
+
 ## What Gets Verified Per-Step
 
 | Check | Source |

@@ -448,4 +448,259 @@ def create_failure_receipt(
 
 ---
 
+## V_OUTPUT_MODE: debtunit_only.v1
+
+### Mode Specification
+
+The measured gate **MUST** operate in `debtunit_only.v1` mode, which ensures:
+
+| Requirement | Implementation |
+|-------------|----------------|
+| Output format | DebtUnit canonical string only |
+| V(x) computation | State-only (no action dependency) |
+| Arithmetic | Integer-only (no floating-point) |
+| Comparison | Exact integer comparison |
+
+### State-Only Violation Functional
+
+V(x) is computed **only from state**, never from actions:
+
+```python
+def compute_v_state_only(contract_set: ContractSet, state: State) -> DebtUnit:
+    """
+    Compute V(x) for given contract set and state.
+    
+    IMPORTANT: This is state-only. Actions do not affect V computation.
+    The action is only used to compute tilde{x}_o (patched state).
+    """
+    return compute_v(contract_set, state)  # No action reference!
+```
+
+### Delta V Per-Operation
+
+To prevent "write-set smuggling", ΔV is computed per-operation:
+
+```python
+def compute_delta_v_single_op(
+    contract_set: ContractSet,
+    state: State,
+    action: ActionDescriptor
+) -> tuple[DebtUnit, DebtUnit]:
+    """
+    Compute V(x) and V(tilde{x}_o) for single-op patched state.
+    
+    tilde{x}_o = x with single-op patch applied
+    """
+    # Pre-transition debt (from current state)
+    v_pre = compute_v_state_only(contract_set, state)
+    
+    # Apply single-op patch to get tilde{x}_o
+    tilde_x_o = apply_single_op_patch(state, action)
+    
+    # Post-transition debt (from patched state)
+    v_post = compute_v_state_only(contract_set, tilde_x_o)
+    
+    # Delta V
+    delta_v = v_post - v_pre
+    
+    return v_pre, v_post, delta_v
+
+def apply_single_op_patch(state: State, action: ActionDescriptor) -> State:
+    """
+    Apply single-op patch to state.
+    
+    This is the tilde{x}_o notation - the state with exactly one
+    operation's effects applied.
+    """
+    # Validate single operation
+    if len(action.target_blocks) != 1:
+        raise ValueError("Single-op patch requires exactly one target block")
+    
+    # Apply deterministic patch
+    return transition_function(action.transition_fn_id, state, action.payload)
+```
+
+---
+
+## Integer-Only Norm Comparison
+
+### S/Q Integerization
+
+To prevent floating-point "wedgeability", norm comparisons use integer arithmetic:
+
+```python
+def compare_norms_integer(
+    r1: list[DebtUnit],
+    r2: list[DebtUnit],
+    sigma1: DebtUnit,
+    sigma2: DebtUnit
+) -> int:
+    """
+    Compare ||r1||₂² / σ1²  vs  ||r2||₂² / σ2²  using integers.
+    
+    Returns: -1 if r1 < r2, 0 if equal, 1 if r1 > r2
+    
+    Uses S/Q integerization to avoid floating-point:
+    - Compute numerator S = ||r||₂² as integer
+    - Compute denominator Q = σ² as integer
+    - Compare S1/Q1 vs S2/Q2 via S1*Q2 vs S2*Q1
+    """
+    # Compute ||r1||₂² as integer
+    s1 = sum(r_i.int_value * r_i.int_value for r_i in r1)
+    q1 = sigma1.int_value * sigma1.int_value
+    
+    # Compute ||r2||₂² as integer
+    s2 = sum(r_i.int_value * r_i.int_value for r_i in r2)
+    q2 = sigma2.int_value * sigma2.int_value
+    
+    # Compare via cross-multiplication (exact integer arithmetic)
+    lhs = s1 * q2
+    rhs = s2 * q1
+    
+    if lhs < rhs:
+        return -1
+    elif lhs > rhs:
+        return 1
+    else:
+        return 0
+```
+
+### Weight Aggregation with GCD/LCM
+
+All weights are reduced and aggregated using exact integer arithmetic:
+
+```python
+def aggregate_weights_integers(
+    contracts: list[Contract]
+) -> tuple[int, int]:
+    """
+    Aggregate all contract weights to single fraction p/Q.
+    
+    Returns (P, Q) where total weight = P/Q in lowest terms.
+    """
+    denominators = []
+    numerators = []
+    
+    for contract in contracts:
+        p, q = parse_weight_fraction(contract.weight_spec_id)
+        # Already reduced via gcd
+        numerators.append(p)
+        denominators.append(q)
+    
+    # Compute LCM of denominators
+    Q = compute_lcm(denominators)
+    
+    # Convert all numerators to common denominator
+    P = sum(numerators[i] * (Q // denominators[i]) for i in range(len(contracts)))
+    
+    # Reduce to lowest terms
+    g = gcd(P, Q)
+    return (P // g, Q // g)
+
+def compute_lcm(denominators: list[int]) -> int:
+    """Compute LCM of denominators using GCD."""
+    if not denominators:
+        return 1
+    
+    result = denominators[0]
+    for d in denominators[1:]:
+        result = abs(result * d) // gcd(result, d)
+    return result
+
+def gcd(a: int, b: int) -> int:
+    """Euclidean GCD algorithm."""
+    while b:
+        a, b = b, a % b
+    return abs(a)
+```
+
+---
+
+## Single-Op Patched State (tilde{x}_o)
+
+### Definition
+
+The single-op patched state `tilde{x}_o` represents the state after applying exactly **one operation**:
+
+```
+tilde{x}_o = patch(x, op)
+```
+
+Where:
+- `x` is the pre-transition state
+- `op` is the single operation being evaluated
+- `patch` is the deterministic transition function
+
+### Purpose
+
+The `tilde{x}_o` notation prevents **write-set smuggling** by:
+
+| Threat | Mitigation |
+|--------|------------|
+| Multiple operations hiding debt | Each op evaluated independently |
+| Write-order exploitation | Single-op patches computed in order |
+| Floating-point wedges | Integer-only comparison |
+
+### Gate Algorithm with tilde{x}_o
+
+```python
+def measured_gate_with_patched_state(input: GateInput) -> GateOutput:
+    """
+    Measured gate using single-op patched state.
+    """
+    # Decode action
+    action = decode_action(input.action)
+    
+    # Check invariants
+    invariants_pass, invariant_failure = check_invariants(input.state)
+    if not invariants_pass:
+        return create_failure_receipt(input, "invariant_violation", invariant_failure)
+    
+    # Compute V(x) - state-only
+    v_pre = compute_v_state_only(input.contract_set, input.state)
+    
+    # Apply single-op patch to get tilde{x}_o
+    tilde_x_o = apply_single_op_patch(input.state, action)
+    
+    # Compute V(tilde{x}_o) - state-only
+    v_post = compute_v_state_only(input.contract_set, tilde_x_o)
+    
+    # Delta V
+    delta_v = v_post - v_pre
+    
+    # Compute service from pre-state debt
+    service = compute_service(v_pre, input.budget, 
+                            input.service_policy_id,
+                            input.service_instance_id)
+    
+    # Gate decision: accept iff V(tilde{x}_o) ≤ V(x) - S + E
+    allowed_max = v_pre - service + input.disturbance
+    
+    # Integer comparison
+    if v_post.int_value <= allowed_max.int_value:
+        decision = GateDecision.ACCEPT
+        failure_code = None
+    else:
+        decision = GateDecision.REJECT
+        failure_code = "law_violation:debt_exceeded"
+    
+    # Emit receipt
+    receipt = create_receipt(
+        input=input,
+        state_post=tilde_x_o,
+        debt_pre=v_pre,
+        debt_post=v_post,
+        delta_v=delta_v,
+        service=service,
+        decision=decision,
+        failure_code=failure_code,
+        invariants_pass=True,
+        law_check_pass=(decision == GateDecision.ACCEPT)
+    )
+    
+    return GateOutput(decision=decision, failure_code=failure_code, receipt=receipt)
+```
+
+---
+
 *See also: [`5_curvature.md`](5_curvature.md), [`7_receipts.md`](7_receipts.md), [`../ck0/4_budget_debt_law.md`](../ck0/4_budget_debt_law.md)*

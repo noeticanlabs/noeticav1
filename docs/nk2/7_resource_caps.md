@@ -146,6 +146,150 @@ class ResourceError:
 
 ---
 
+## 3.7 Resource Caps → Deterministic Reject (NK-2 Canon)
+
+### 3.7.1 Resource Cap Mode
+
+```python
+# v1.0: Deterministic reject mode - no rescheduling on cap exceeded
+RESOURCE_CAP_MODE = "deterministic_reject.v1"
+
+# Constants defining hard caps (policy-locked at chain init)
+MAX_BIGINT_BITS: int = 4096          # Maximum BigInt bit length allowed
+MAX_MATRIX_ACCUM_TERMS: int = 10000  # Maximum matrix accumulation terms
+```
+
+### 3.7.2 Cap Constants Definition
+
+```python
+@dataclass(frozen=True)
+class ResourceCapConstants:
+    """
+    Policy-locked resource cap constants.
+    
+    These are determined at chain initialization and cannot be
+    changed during execution.
+    """
+    
+    # BigInt size caps
+    MAX_BIGINT_BITS: int = 4096          # Maximum bits in any BigInt computation
+    MAX_LCM_BITS: int = 4096             # Maximum bits in LCM computation
+    
+    # Matrix accumulation caps  
+    MAX_MATRIX_ACCUM_TERMS: int = 10000  # Maximum off-diagonal terms
+    
+    # Field access caps
+    MAX_FIELDS_TOUCHED_PER_OP: int = 256
+    
+    # Computation cost caps
+    MAX_V_EVAL_COST: int = 10000
+    MAX_DELTA_COMPONENTS: int = 256
+    
+    # Batch size caps
+    MAX_BATCH_SIZE: int = 64
+
+
+# Default instance for v1.0
+DEFAULT_RESOURCE_CAPS = ResourceCapConstants()
+```
+
+### 3.7.3 No Reschedule on Cap Exceeded
+
+In v1.0, when ANY resource cap is exceeded, the system MUST halt - there is no reschedule:
+
+```python
+# Invariant: RESOURCE_CAP_MODE = deterministic_reject.v1
+# - No retry attempts on resource exhaustion
+# - No batch size reduction
+# - No graceful degradation
+# - Immediate halt with deterministic error
+
+def handle_resource_cap_exceeded(
+    error: ResourceError,
+    context: AttemptContext
+) -> AttemptResult:
+    """
+    Handle resource cap exceeded - v1.0 deterministic reject.
+    
+    When any resource cap is exceeded:
+    1. DO NOT attempt retry
+    2. DO NOT reschedule batch
+    3. DO NOT emit any receipt
+    4. HALT with deterministic error
+    
+    This ensures:
+    - Replay stability (same inputs → same outputs)
+    - No nondeterminism from hardware differences
+    - Deterministic resource bounds
+    """
+    # Log for debugging (not for replay)
+    logger.error(
+        f"Resource cap exceeded: {error.resource_type}=" 
+        f"{error.actual} > {error.limit}"
+    )
+    
+    # Return terminal result - no reschedule
+    return AttemptResult(
+        success=False,
+        terminal_error=TerminalError(
+            error_code=error.error_code.value,
+            resource_error=error,
+            batch_prev_hash=context.batch_prev_hash,
+            # No retry - deterministic reject
+            can_retry=False,
+        )
+    )
+
+
+# Main loop integration:
+def attempt_batch_with_resource_caps(...) -> BatchAttemptResult:
+    """
+    Execute batch with resource cap enforcement.
+    
+    Any cap exceeded triggers deterministic reject (halt).
+    No reschedule in v1.0.
+    """
+    # ... execute batch ...
+    
+    if resource_error:
+        # Deterministic reject - halt, no reschedule
+        return BatchAttemptResult(
+            success=False,
+            failure_code=FailureCode.CAP_EXCEEDED,
+            resource_error=resource_error,
+            should_halt=True,  # Key: halt, don't reschedule
+            retry_count=0,      # No retries
+        )
+    
+    # ... success path ...
+```
+
+### 3.7.4 Deterministic Reject Guarantees
+
+| Property | Guarantee |
+|----------|----------|
+| **Same inputs** | Same cap exceeded decision |
+| **Same hardware** | Same resource measurement |
+| **Different hardware** | Cap prevents nondeterminism |
+| **Replay** | Deterministic error path |
+| **No reschedule** | Cap exceeded = halt in v1.0 |
+
+```python
+# Deterministic reject invariant:
+DETERMINISTIC_REJECT_INVARIANT = """
+Given the same ExecPlan and pre-state:
+1. If any cap would be exceeded, it is ALWAYS exceeded
+2. If no cap is exceeded, it NEVER is
+3. The error code is deterministic (based on which cap first fails)
+4. No reschedule occurs - execution halts immediately
+5. No receipt is emitted for the failed attempt
+"""
+```
+
+This ensures NK-2 is **closed under caps**: resource constraints are deterministic boundaries, not probabilistic thresholds.
+
+---
+
 ## 4. Integration Points
 
 ### 4.1 δ-Norm Computation

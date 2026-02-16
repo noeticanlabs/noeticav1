@@ -184,6 +184,127 @@ def handle_execution_failure(
 
 ---
 
+## 2.6 Deterministic Rescheduling Law (NK-2 Canon)
+
+### 2.6.1 Append Log Determinism Requirement
+
+The **append_log** is the canonical record of operation insertion order. It defines "last-added op" deterministically:
+
+```python
+APPEND_LOG_INVARIANT = """
+1. append_log is a list[OpID] maintained by the scheduler
+2. append_log[i] was added before append_log[j] for all i < j
+3. append_log[-1] is always the most recently added operation
+4. No operation may be removed from append_log except via:
+   - Planning failure: remove last-added (append_log[-1])
+   - This ensures deterministic "which op to remove" is always well-defined
+"""
+```
+
+### 2.6.2 Lexmin Split Rule for Failure Handling
+
+When an execution-time failure occurs on batch B:
+
+```python
+# Transform: resched.split_lexmin.v1
+# 1. o_min = lexmin(op_id in B) [lexicographically smallest by UTF-8 encoding]
+# 2. B1 = [o_min] (singleton batch for next attempt)
+# 3. B_rest = B \ {o_min} (returned to Ready queue)
+
+def apply_lexmin_split(batch: list[OpSpec]) -> SplitResult:
+    """
+    Deterministic split: always pick lexmin op_id.
+    
+    This ensures identical batches always produce identical splits
+    regardless of execution order or timing.
+    """
+    # Sort by UTF-8 encoded op_id for deterministic lexmin
+    sorted_ops = sorted(batch, key=lambda op: op.op_id.encode('utf-8'))
+    o_min = sorted_ops[0]
+    
+    return SplitResult(
+        singleton_batch=[o_min],
+        returned_ops=[op.op_id for op in batch if op.op_id != o_min.op_id],
+        split_op_id=o_min.op_id,
+    )
+```
+
+### 2.6.3 Singleton Failure = Terminal
+
+A singleton failure (single-op batch) with any of the following error codes **MUST halt**:
+
+| Error Code | Category | Action |
+|------------|----------|--------|
+| `err.kernel_error.singleton` | Kernel | HALT |
+| `err.delta_bound.singleton` | δ-check | HALT |
+| `err.policy_veto.singleton` | Policy | HALT |
+| `err.gate_eps.singleton` | Gate | HALT |
+
+```python
+TERMINAL_FAILURE_CODES = {
+    FailureCode.KERNEL_ERROR_SINGLETON,
+    FailureCode.DELTA_BOUND_SINGLETON,
+    FailureCode.POLICY_VETO_SINGLETON,
+    FailureCode.GATE_EPS_SINGLETON,  # Defensive
+}
+
+def is_terminal_singleton_failure(
+    failure_code: FailureCode,
+    batch_size: int
+) -> bool:
+    """
+    Singleton failure is terminal.
+    
+    When a batch of size 1 fails with any of the terminal codes,
+    the kernel/delta/policy system has a fundamental issue and
+    cannot make progress - halt immediately.
+    """
+    return batch_size == 1 or failure_code in TERMINAL_FAILURE_CODES
+```
+
+### 2.6.4 No Attempt Receipts Rule
+
+Failed attempts MUST NOT emit receipts to the ledger. This prevents ledger leakage of retries:
+
+```python
+# Invariant: NO receipts for failed attempts
+# This is enforced at the main loop level:
+
+def attempt_batch(...) -> BatchAttemptResult:
+    result = execute_batch(...)
+    
+    if not result.success:
+        # DO NOT emit any receipt
+        # DO NOT append to ledger
+        # DO NOT update ledger anchor
+        # Just return failure result for handling
+        return result
+    
+    # Only success emits receipt
+    receipt = emit_commit_receipt(result)
+    ledger.append(receipt)
+    return result
+
+# Ledger invariant verification:
+def verify_no_failed_attempt_receipts(ledger: ReceiptLedger) -> bool:
+    """
+    Verify ledger contains only successful commits.
+    
+    v1.0 invariant: failed attempts produce zero ledger entries.
+    """
+    for receipt in ledger.commits:
+        if not verify_commit_structure(receipt):
+            return False
+    return True
+```
+
+This ensures:
+- Failed batch retries don't pollute the receipt chain
+- Replay verifier sees only successful state transitions
+- Deterministic replay is maintained (same input → same output ledger)
+
+---
+
 ## 3. Singleton Terminal Rule
 
 ### 3.1 Terminal Conditions

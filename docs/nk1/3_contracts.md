@@ -219,6 +219,7 @@ class MeasurementOutput:
     
     # Policy identification
     v_policy_id: str = "CK0.v1"
+    v_output_mode: str = "debtunit_only.v1"  # State-only, DebtUnit-only
     
     # Total violation
     v_total: DebtUnit
@@ -235,6 +236,7 @@ class MeasurementOutput:
         # Deterministic field ordering
         return json.dumps({
             "v_policy_id": self.v_policy_id,
+            "v_output_mode": self.v_output_mode,
             "v_total": self.v_total.canonical(),
             "contract_set_id": self.contract_set_id,
             "state_hash": self.state_hash,

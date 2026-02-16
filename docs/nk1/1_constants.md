@@ -111,6 +111,47 @@ Q is used only for deterministic intermediate representation.
 
 ---
 
+## PolicyBundle Registry (§1.8)
+
+The PolicyBundle registry provides chain-wide policy identification and immutability enforcement.
+
+### PolicyBundle Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `policy_bundle_id` | `string` | Unique identifier (UUID v4 format) |
+| `policy_digest` | `string` | SHA256 hex of `canon_policy_bytes.v1` |
+| `canon_policy_bytes.v1` | `bytes` | Canonical byte representation of policy |
+
+### Construction
+
+```
+policy_digest = SHA256(canon_policy_bytes.v1)
+```
+
+Where `canon_policy_bytes.v1` is the deterministic, canonical serialization of the policy document.
+
+### Chain-Wide Lock Rule
+
+**v1.0 Lock**: Commit receipts MUST bind `(policy_bundle_id, policy_digest)`.
+
+| Rule | Description |
+|------|-------------|
+| **Binding** | Every commit receipt must include both `policy_bundle_id` and `policy_digest` |
+| **Immutability** | v1.0 forbids transitions that change the `policy_digest` |
+| **Rejection** | Any commit with a different digest than the chain's committed digest = REJECT |
+
+#### Transition Rule
+
+```
+IF commit_receipt.policy_digest ≠ chain_policy_digest
+   THEN REJECT transition
+```
+
+This ensures policy drift is impossible across commits - the chain maintains a single canonical policy digest for its entire lifetime.
+
+---
+
 ## Change Policy
 
 1. Any change to locked constants requires NK-1 version bump

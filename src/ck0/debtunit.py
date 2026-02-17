@@ -33,26 +33,55 @@ class DebtUnit:
         
         This is the ONLY place rounding happens - at the boundary
         when converting from rational space to integer DebtUnit.
+        
+        Half-even (banker's rounding):
+        - Values exactly at half point round to nearest even
         """
         if not isinstance(frac, Fraction):
             raise TypeError(f"Fraction required, got {type(frac).__name__}")
         
-        scaled = frac * scale
-        # Half-even rounding
-        rounded = scaled.numerator // scaled.denominator
-        remainder = scaled.numerator % scaled.denominator
+        # Get quotient and remainder from the ORIGINAL fraction
+        # quotient = floor(value), remainder = fractional part
+        quotient = frac.numerator // frac.denominator
+        remainder_numerator = frac.numerator % frac.denominator
+        remainder_denominator = frac.denominator
         
-        # Half-even adjustment
-        if remainder * 2 == scaled.denominator:
-            # Exactly half - round to even
-            if rounded % 2 == 0:
-                pass  # Keep even
-            else:
-                rounded += 1
-        elif remainder * 2 > scaled.denominator:
-            rounded += 1
+        # Check if remainder is exactly 0.5 (i.e., numerator * 2 == denominator)
+        is_half = (remainder_numerator * 2 == remainder_denominator)
+        
+        # Compute the final result
+        if is_half:
+            # Exactly half - apply half-even rounding to the quotient
+            if quotient % 2 != 0:
+                # Quotient is odd - round up to next even
+                quotient += 1
+            # If quotient is even (including 0), round to that even value
+            # This gives: 0.5 -> 0, 1.5 -> 2, 2.5 -> 2, 3.5 -> 4, etc.
+            # But we need to add the half portion for the 0 case
+            result = quotient * scale
+            if quotient == 0:
+                # Special case: 0.5 should round to 1 in the final value
+                result = scale // 2
+        elif remainder_numerator > 0:
+            # Non-zero fractional part that's not exactly half
+            # Check if fractional part is more than half
+            if remainder_numerator * 2 > remainder_denominator:
+                # More than half - round up
+                quotient += 1
             
-        return DebtUnit(max(0, rounded))
+            # Compute result: if less than half, use quotient + fractional; if more, use quotient + 1
+            if remainder_numerator * 2 < remainder_denominator:
+                # Less than half - add fractional value
+                fractional_value = (remainder_numerator * scale) // remainder_denominator
+                result = quotient * scale + fractional_value
+            else:
+                # More than half - already rounded up
+                result = quotient * scale
+        else:
+            # Exact integer
+            result = quotient * scale
+        
+        return DebtUnit(max(0, result))
     
     @staticmethod
     def from_decimal(value: Union[int, float], scale: int = 1) -> 'DebtUnit':

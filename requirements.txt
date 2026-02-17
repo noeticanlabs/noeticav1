@@ -1,0 +1,11 @@
+# Noetica v1.0 Requirements
+
+# Core dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Optional: for type checking
+mypy>=1.0.0
+
+# Optional: for documentation
+markdown>=3.4.0

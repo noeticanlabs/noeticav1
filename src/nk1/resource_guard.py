@@ -5,11 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 # Import from ck0
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'ck0'))
-
-from debtunit import DebtUnit
+from ck0.debtunit import DebtUnit
 
 
 class ResourceCapMode(Enum):

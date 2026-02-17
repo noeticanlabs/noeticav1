@@ -5,13 +5,9 @@ from dataclasses import dataclass
 from fractions import Fraction
 
 # Re-export from ck0 for NK-1 usage
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'ck0'))
-
-from debtunit import DebtUnit
-from state_space import State
-from violation import ViolationFunctional, Contract
+from ck0.debtunit import DebtUnit
+from ck0.state_space import State
+from ck0.violation import ViolationFunctional, Contract
 
 
 @dataclass

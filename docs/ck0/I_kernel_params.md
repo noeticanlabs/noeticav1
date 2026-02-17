@@ -201,6 +201,53 @@ def footprint_fn(params_canon: bytes) -> FootprintResult:
 | Hash-locked | `footprint_fn_hash` must be in NK-3 allowlist |
 | Byte-input only | Input is `params_canon: bytes`, never a deserialized object |
 
+### 3.6 Error Handling Inside footprint_fn
+
+`footprint_fn` is a **total function over valid canon bytes**. However, it may encounter errors during internal parsing. The error discipline is:
+
+#### 3.6.1 Error Classification
+
+| Error Class | Trigger | Required Behavior |
+|-------------|---------|-------------------|
+| `PARSE_MALFORMED` | `params_canon` bytes fail `len_prefix` framing (truncated, overflow, trailing bytes) | Return `FootprintError::MalformedParams` immediately |
+| `TAG_MISMATCH` | Atom type tag does not match expected `field_tag` in schema | Return `FootprintError::TagMismatch{field_index, expected, got}` |
+| `ARITY_VIOLATION` | Atom count does not match schema field count | Return `FootprintError::ArityMismatch{expected, got}` |
+| `CONSTRAINT_FAIL` | Atom value violates schema constraint (e.g. out of range) | Return `FootprintError::ConstraintViolation{field_index, constraint_id}` |
+| `COMPUTE_FAIL` | Footprint computation itself fails (e.g. FieldID not in state space) | Return `FootprintError::ComputeFailure{reason}` |
+
+#### 3.6.2 Error Propagation Rules
+
+| Rule | Description |
+|------|-------------|
+| No exceptions | `footprint_fn` MUST NOT raise/throw. All errors are returned as typed `FootprintError` values. |
+| No partial results | On any error, no partial footprint is returned. The entire call fails atomically. |
+| Error is deterministic | The same `params_canon` input must always produce the same error (or the same success). |
+| Error is logged | The caller (NK-3 lowerer) MUST record the error class in the rejection reason field. |
+| Error halts pipeline | Any `FootprintError` is a **hard reject** of the containing op. No retry, no fallback. |
+
+#### 3.6.3 Caller Responsibility
+
+The caller (NK-3 lowerer) MUST:
+
+1. **Pre-validate** `params_canon` against `params_schema_digest` before calling `footprint_fn` (§2.3 rules).
+2. **Treat FootprintError as fatal** — if `footprint_fn` returns an error despite pre-validation passing, this indicates a registry inconsistency. The entire NSC program MUST be rejected.
+3. **Never catch and retry** — `footprint_fn` errors are not transient. Same input → same error.
+4. **Record error in receipt** — if the op is rejected, the receipt must include:
+
+| Receipt Field | Type | Description |
+|---------------|------|-------------|
+| `rejection_reason` | string | Error class from §3.6.1 |
+| `rejection_detail` | string | Serialized error payload (field_index, expected/got, etc.) |
+| `params_digest` | Hash256 | Digest of the `params_canon` that caused the error |
+
+#### 3.6.4 Double-Validation Invariant
+
+Because the caller pre-validates params (§2.3) and `footprint_fn` re-validates internally (§3.4), the following invariant holds:
+
+> **If pre-validation passes, `footprint_fn` MUST NOT return `PARSE_MALFORMED`, `TAG_MISMATCH`, or `ARITY_VIOLATION`.**
+>
+> Violation of this invariant indicates a bug in either the schema validator or the footprint function. Implementations MUST treat this as a **critical internal error** and halt with diagnostic output.
+
 ---
 
 ## 4. Integration Points
@@ -274,3 +321,6 @@ Implementations must pass the following golden vector tests:
 | Float literal instead of `q:6:` | REJECT |
 | Bare integer without `i:` tag | REJECT |
 | Dict passed to `footprint_fn` | REJECT (type error) |
+| `footprint_fn` returns `FootprintError::ComputeFailure` | REJECT; receipt includes rejection_reason |
+| `footprint_fn` returns parse error after pre-validation pass | CRITICAL INTERNAL ERROR; halt with diagnostic |
+| `footprint_fn` raises exception instead of returning error | REJECT; violates no-exceptions rule (§3.6.2) |

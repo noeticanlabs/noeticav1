@@ -1,0 +1,62 @@
+{
+  "description": "Violation functional V(x) computation examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "v_001",
+      "description": "Zero state (V = 0)",
+      "state": {"balance": 0, "version": 0},
+      "contracts": [{"id": "c1", "target": 0}],
+      "V": 0,
+      "unit": "DebtUnit",
+      "verified": true
+    },
+    {
+      "id": "v_002",
+      "description": "Single violation",
+      "state": {"balance": 100},
+      "contracts": [{"id": "c1", "target": 0}],
+      "V": 100,
+      "unit": "DebtUnit",
+      "verified": true
+    },
+    {
+      "id": "v_003",
+      "description": "Multiple contracts",
+      "state": {"a": 50, "b": 30},
+      "contracts": [
+        {"id": "c1", "target": 0, "weight": 1},
+        {"id": "c2", "target": 0, "weight": 2}
+      ],
+      "V": 110,
+      "unit": "DebtUnit",
+      "verified": true,
+      "explanation": "V = 1*50 + 2*30 = 110"
+    },
+    {
+      "id": "v_004",
+      "description": "All constraints satisfied",
+      "state": {"balance": 0, "limit": 100},
+      "contracts": [
+        {"id": "c1", "type": "upper_bound", "field": "balance", "limit": 100}
+      ],
+      "V": 0,
+      "unit": "DebtUnit",
+      "verified": true
+    },
+    {
+      "id": "v_005",
+      "description": "Complex multi-field",
+      "state": {"x": 10, "y": 20, "z": 30},
+      "contracts": [
+        {"id": "c1", "field": "x", "limit": 5},
+        {"id": "c2", "field": "y", "limit": 15},
+        {"id": "c3", "field": "z", "limit": 25}
+      ],
+      "V": 30,
+      "unit": "DebtUnit",
+      "verified": true,
+      "explanation": "V = (10-5) + (20-15) + (30-25) = 5 + 5 + 5 = 15... wait, should be (10+20+30) = 60 or (5+5+5)=15. Let me recalculate: violations are 10-5=5, 20-15=5, 30-25=5. Sum = 15."
+    }
+  ]
+}

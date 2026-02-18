@@ -1,0 +1,46 @@
+{
+  "description": "DAG topological ordering examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "dag_001",
+      "description": "Empty DAG",
+      "nodes": [],
+      "edges": [],
+      "topo_order": [],
+      "explanation": "Empty graph has empty ordering"
+    },
+    {
+      "id": "dag_002",
+      "description": "Single node",
+      "nodes": ["op:1"],
+      "edges": [],
+      "topo_order": ["op:1"],
+      "explanation": "Single node is first"
+    },
+    {
+      "id": "dag_003",
+      "description": "Linear chain",
+      "nodes": ["op:a", "op:b", "op:c"],
+      "edges": [["op:a", "op:b"], ["op:b", "op:c"]],
+      "topo_order": ["op:a", "op:b", "op:c"],
+      "explanation": "Linear dependency chain"
+    },
+    {
+      "id": "dag_004",
+      "description": "Diamond dependency",
+      "nodes": ["op:start", "op:left", "op:right", "op:end"],
+      "edges": [["op:start", "op:left"], ["op:start", "op:right"], ["op:left", "op:end"], ["op:right", "op:end"]],
+      "topo_order": ["op:start", "op:left", "op:right", "op:end"],
+      "explanation": "Both left and right must complete before end"
+    },
+    {
+      "id": "dag_005",
+      "description": "Parallel branches",
+      "nodes": ["op:root", "op:a", "op:b", "op:c", "op:join"],
+      "edges": [["op:root", "op:a"], ["op:root", "op:b"], ["op:root", "op:c"], ["op:a", "op:join"], ["op:b", "op:join"], ["op:c", "op:join"]],
+      "topo_order": ["op:root", "op:a", "op:b", "op:c", "op:join"],
+      "explanation": "All branches can execute in parallel after root"
+    }
+  ]
+}

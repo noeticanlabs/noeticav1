@@ -1,0 +1,70 @@
+{
+  "description": "ID canonicalization examples (FieldID, OpID, etc)",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "id_001",
+      "type": "FieldID",
+      "input": "ID:FIELD.BALANCE",
+      "canonical": "id:field.balance",
+      "valid": true,
+      "notes": "Must be lowercase"
+    },
+    {
+      "id": "id_002",
+      "type": "FieldID",
+      "input": "1a2b3c4d5e6f708192a3b4c5d6e7f809",
+      "canonical": "1a2b3c4d5e6f708192a3b4c5d6e7f809",
+      "valid": true,
+      "notes": "32 hex chars lowercase"
+    },
+    {
+      "id": "id_003",
+      "type": "OpID",
+      "input": "module:abc123:node/path:0",
+      "canonical": "module:abc123:node/path:0",
+      "valid": true,
+      "notes": "Derived format"
+    },
+    {
+      "id": "id_004",
+      "type": "PolicyID",
+      "input": "CK0.service.v1.linear_capped",
+      "canonical": "CK0.service.v1.linear_capped",
+      "valid": true,
+      "notes": "ASCII printable only"
+    },
+    {
+      "id": "id_005",
+      "type": "SchemaID",
+      "input": "schema:balance:v1",
+      "canonical": "schema:balance:v1",
+      "valid": true,
+      "notes": "No Unicode"
+    },
+    {
+      "id": "id_006",
+      "type": "Hash256",
+      "input": "ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890",
+      "canonical": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      "valid": true,
+      "notes": "Must be lowercase hex"
+    },
+    {
+      "id": "id_007",
+      "type": "FieldID",
+      "input": "invalid_uppercase",
+      "canonical": null,
+      "valid": false,
+      "error": "Must be lowercase"
+    },
+    {
+      "id": "id_008",
+      "type": "Hash256",
+      "input": "short",
+      "canonical": null,
+      "valid": false,
+      "error": "Must be exactly 64 hex chars"
+    }
+  ]
+}

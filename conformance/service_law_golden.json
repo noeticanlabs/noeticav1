@@ -1,0 +1,51 @@
+{
+  "description": "Service law S(D,B) computation examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "sl_001",
+      "policy": "linear_capped",
+      "mu": 1,
+      "debt": 0,
+      "budget": 100,
+      "result": 0,
+      "explanation": "Zero debt means zero service"
+    },
+    {
+      "id": "sl_002",
+      "policy": "linear_capped", 
+      "mu": 1,
+      "debt": 100,
+      "budget": 0,
+      "result": 0,
+      "explanation": "Zero budget means zero service"
+    },
+    {
+      "id": "sl_003",
+      "policy": "linear_capped",
+      "mu": 1,
+      "debt": 100,
+      "budget": 50,
+      "result": 50,
+      "explanation": "S = min(mu*budget, debt) = min(1*50, 100) = 50"
+    },
+    {
+      "id": "sl_004",
+      "policy": "linear_capped",
+      "mu": 2,
+      "debt": 100,
+      "budget": 50,
+      "result": 100,
+      "explanation": "S = min(mu*budget, debt) = min(2*50, 100) = 100"
+    },
+    {
+      "id": "sl_005",
+      "policy": "identity",
+      "mu": 1,
+      "debt": 100,
+      "budget": 50,
+      "result": 50,
+      "explanation": "Identity: S(D,B) = B = 50"
+    }
+  ]
+}

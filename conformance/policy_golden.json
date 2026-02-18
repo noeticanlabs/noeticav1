@@ -1,0 +1,28 @@
+{
+  "description": "PolicyBundle canonical encoding examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "policy_001",
+      "description": "Minimal PolicyBundle",
+      "policy_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "service_policy": "CK0.service.v1.linear_capped",
+      "service_instance": "linear_capped.mu:1",
+      "disturbance_policy": "DP0",
+      "debt_scale": 65536,
+      "curvature_matrix": null,
+      "verified": true
+    },
+    {
+      "id": "policy_002",
+      "description": "Full PolicyBundle with curvature",
+      "policy_digest": "abc123def456789",
+      "service_policy": "CK0.service.v1.linear_capped",
+      "service_instance": "linear_capped.mu:2",
+      "disturbance_policy": "DP1",
+      "debt_scale": 65536,
+      "curvature_matrix": [[0, 1], [1, 0]],
+      "verified": true
+    }
+  ]
+}

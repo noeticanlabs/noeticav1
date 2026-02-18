@@ -1,0 +1,56 @@
+{
+  "description": "Actual batch residual (ε) measurement examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "eps_meas_001",
+      "description": "Additive operators (ε = 0)",
+      "state": {"balance": 100, "version": 1},
+      "operators": ["op:add:balance:10", "op:add:version:1"],
+      "V_before": 50,
+      "V_after": 50,
+      "epsilon": 0,
+      "explanation": "Operators affect different fields, V is additive"
+    },
+    {
+      "id": "eps_meas_002",
+      "description": "Overlapping operators (ε > 0)",
+      "state": {"balance": 100},
+      "operators": ["op:add:balance:10", "op:add:balance:20"],
+      "V_before": 50,
+      "V_after": 35,
+      "epsilon": 5,
+      "explanation": "Combined effect larger than sum of individual"
+    },
+    {
+      "id": "eps_meas_003",
+      "description": "Conflicting operators (ε < 0)",
+      "state": {"balance": 100},
+      "operators": ["op:add:balance:10", "op:set:balance:50"],
+      "V_before": 50,
+      "V_after": 25,
+      "epsilon": -25,
+      "explanation": "Second operator overrides first, less total effect"
+    },
+    {
+      "id": "eps_meas_004",
+      "description": "Three operators",
+      "state": {"a": 10, "b": 10, "c": 10},
+      "operators": ["op:add:a:1", "op:add:b:1", "op:add:c:1"],
+      "V_before": 30,
+      "V_after": 33,
+      "epsilon": 0,
+      "explanation": "Independent fields, additive"
+    },
+    {
+      "id": "eps_meas_005",
+      "description": "Complex interaction",
+      "state": {"x": 0, "y": 0},
+      "operators": ["op:inc:x", "op:inc:y", "op:link:x:y"],
+      "V_before": 0,
+      "V_after": 5,
+      "epsilon": 2,
+      "explanation": "Link operator creates interaction between x and y"
+    }
+  ]
+}

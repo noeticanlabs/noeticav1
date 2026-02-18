@@ -1,0 +1,86 @@
+{
+  "description": "DebtUnit exact integer arithmetic examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "du_001",
+      "description": "Zero creation",
+      "operation": "DebtUnit(0)",
+      "result": 0,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_002", 
+      "description": "Simple addition",
+      "operation": "DebtUnit(100) + DebtUnit(50)",
+      "result": 150,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_003",
+      "description": "Simple subtraction (no underflow)",
+      "operation": "DebtUnit(100) - DebtUnit(30)",
+      "result": 70,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_004",
+      "description": "Multiplication",
+      "operation": "DebtUnit(10) * DebtUnit(5)",
+      "result": 50,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_005",
+      "description": "Division (exact)",
+      "operation": "DebtUnit(100) // DebtUnit(4)",
+      "result": 25,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_006",
+      "description": "Half-even rounding (5 rounds to 0)",
+      "operation": "round_half_even(5)",
+      "result": 0,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_007",
+      "description": "Half-even rounding (15 rounds to 0)",
+      "operation": "round_half_even(15)",
+      "result": 0,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_008",
+      "description": "Half-even rounding (25 rounds to 0)",
+      "operation": "round_half_even(25)",
+      "result": 0,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_009",
+      "description": "Half-even rounding (35 rounds to 0)",
+      "operation": "round_half_even(35)",
+      "result": 0,
+      "scale": 65536,
+      "verified": true
+    },
+    {
+      "id": "du_010",
+      "description": "Scale conversion",
+      "operation": "from_scaled(65536) -> to_scaled()",
+      "result": 1,
+      "scale": 65536,
+      "verified": true
+    }
+  ]
+}

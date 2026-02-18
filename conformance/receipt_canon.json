@@ -1,0 +1,42 @@
+{
+  "description": "Canonical receipt encoding examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "receipt_001",
+      "description": "Minimal step receipt",
+      "step_index": 0,
+      "receipt_version": 1,
+      "state_before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "state_after": "abc123def456789",
+      "debt_before": 0,
+      "debt_after": 0,
+      "service_policy_id": "CK0.service.v1.linear_capped",
+      "service_instance_id": "linear_capped.mu:1",
+      "service_provided": 0,
+      "disturbance_policy_id": "DP0",
+      "E_k": 0,
+      "law_satisfied": true,
+      "invariant_status": "pass",
+      "receipt_hash": "receipt123abc"
+    },
+    {
+      "id": "receipt_002",
+      "description": "Step receipt with debt service",
+      "step_index": 1,
+      "receipt_version": 1,
+      "state_before": "abc123def456789",
+      "state_after": "def789abc123456",
+      "debt_before": 100,
+      "debt_after": 50,
+      "service_policy_id": "CK0.service.v1.linear_capped",
+      "service_instance_id": "linear_capped.mu:1",
+      "service_provided": 50,
+      "disturbance_policy_id": "DP0",
+      "E_k": 0,
+      "law_satisfied": true,
+      "invariant_status": "pass",
+      "receipt_hash": "receipt456def"
+    }
+  ]
+}

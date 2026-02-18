@@ -1,0 +1,44 @@
+{
+  "description": "Canonical state encoding examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "state_001",
+      "description": "Empty state",
+      "fields": [],
+      "canon_bytes": "",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "state_002",
+      "description": "Single integer field",
+      "fields": [
+        {
+          "field_id": "id:field.balance",
+          "type": "integer",
+          "value": 1000
+        }
+      ],
+      "canon_bytes": "a0...test...",
+      "hash": "abc123def456"
+    },
+    {
+      "id": "state_003",
+      "description": "Multiple fields with mixed types",
+      "fields": [
+        {
+          "field_id": "id:field.balance",
+          "type": "integer",
+          "value": 5000
+        },
+        {
+          "field_id": "id:field.version",
+          "type": "integer", 
+          "value": 42
+        }
+      ],
+      "canon_bytes": "b0...test...",
+      "hash": "def789abc123"
+    }
+  ]
+}

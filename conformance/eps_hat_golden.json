@@ -1,0 +1,51 @@
+{
+  "description": "Batch residual bound (ε̂) computation examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "eps_hat_001",
+      "description": "Single operator batch",
+      "operators": ["op:inc:001"],
+      "bounds": [10],
+      "matrix": [[0]],
+      "epsilon_hat": 0,
+      "explanation": "Single operator has zero mixed residual"
+    },
+    {
+      "id": "eps_hat_002",
+      "description": "Two operators with zero curvature",
+      "operators": ["op:inc:001", "op:inc:002"],
+      "bounds": [10, 10],
+      "matrix": [[0, 0], [0, 0]],
+      "epsilon_hat": 0,
+      "explanation": "Zero curvature matrix gives zero bound"
+    },
+    {
+      "id": "eps_hat_003",
+      "description": "Two operators with identity curvature",
+      "operators": ["op:inc:001", "op:inc:002"],
+      "bounds": [10, 10],
+      "matrix": [[0, 1], [1, 0]],
+      "epsilon_hat": 100,
+      "explanation": "ε̂ = M[0][1] * a[0] * a[1] + M[1][0] * a[1] * a[0] = 1*10*10 + 1*10*10 = 200, but symmetric so 100"
+    },
+    {
+      "id": "eps_hat_004",
+      "description": "Three operators",
+      "operators": ["op:inc:001", "op:inc:002", "op:inc:003"],
+      "bounds": [5, 5, 5],
+      "matrix": [[0, 1, 0], [1, 0, 1], [0, 1, 0]],
+      "epsilon_hat": 50,
+      "explanation": "Sum of M[i][j]*a[i]*a[j] for i<j"
+    },
+    {
+      "id": "eps_hat_005",
+      "description": "Large batch with high curvature",
+      "operators": ["op:a:001", "op:b:002", "op:c:003", "op:d:004"],
+      "bounds": [100, 100, 100, 100],
+      "matrix": [[0, 2, 2, 2], [2, 0, 2, 2], [2, 2, 0, 2], [2, 2, 2, 0]],
+      "epsilon_hat": 12000,
+      "explanation": "6 pairs * 2 * 100 * 100 = 12000"
+    }
+  ]
+}

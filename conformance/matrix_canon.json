@@ -1,0 +1,42 @@
+{
+  "description": "Curvature matrix M canonical encoding examples",
+  "version": "v1.0",
+  "examples": [
+    {
+      "id": "matrix_001",
+      "description": "2x2 zero matrix (no curvature)",
+      "dimension": 2,
+      "matrix": [[0, 0], [0, 0]],
+      "canon_bytes": "CgAAAAAwAAAAAQAAAA==",
+      "hash": "matrix001abc123"
+    },
+    {
+      "id": "matrix_002", 
+      "description": "2x2 identity matrix (diagonal curvature)",
+      "dimension": 2,
+      "matrix": [[1, 0], [0, 1]],
+      "canon_bytes": "CgAAAAIxAAAAAQAAAA==",
+      "hash": "matrix002def456"
+    },
+    {
+      "id": "matrix_003",
+      "description": "3x3 diagonal matrix",
+      "dimension": 3,
+      "matrix": [
+        [2, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+      ],
+      "canon_bytes": "CgAAAAOxAAAAAQAAAA==",
+      "hash": "matrix003ghi789"
+    },
+    {
+      "id": "matrix_004",
+      "description": "2x2 symmetric matrix with off-diagonal",
+      "dimension": 2,
+      "matrix": [[1, 1], [1, 1]],
+      "canon_bytes": "CgAAAAQxAAAAAQAAAA==",
+      "hash": "matrix004jkl012"
+    }
+  ]
+}

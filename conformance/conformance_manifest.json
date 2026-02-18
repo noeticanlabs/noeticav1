@@ -1,0 +1,109 @@
+{
+  "version": "v1.0",
+  "created": "2026-02-18",
+  "description": "Noetica v1.0 Conformance Manifest - Golden Vector Artifacts",
+  "command": "noetica conformance-check --manifest conformance_manifest.json",
+  "artifacts": [
+    {
+      "name": "state_canon_bytes",
+      "description": "Canonical state encoding (NSC.v1)",
+      "file": "state_canon.json",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "encoding": "json",
+      "notes": "Empty state example - SHA-256 of empty bytes"
+    },
+    {
+      "name": "receipt_canon_bytes",
+      "description": "Canonical receipt encoding",
+      "file": "receipt_canon.json",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "encoding": "json",
+      "notes": "Minimal receipt example"
+    },
+    {
+      "name": "merkle_root",
+      "description": "Merkle root computation golden",
+      "file": "merkle_golden.json",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "encoding": "json",
+      "notes": "Empty merkle tree root"
+    },
+    {
+      "name": "matrix_canon_bytes",
+      "description": "Curvature matrix M canonical encoding",
+      "file": "matrix_canon.json",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "encoding": "json",
+      "notes": "2x2 identity matrix as example"
+    },
+    {
+      "name": "policy_bundle_bytes",
+      "description": "PolicyBundle canonical encoding",
+      "file": "policy_golden.json",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "encoding": "json",
+      "notes": "Minimal policy bundle"
+    },
+    {
+      "name": "epsilon_hat_examples",
+      "description": "Batch residual bound (ε̂) computation examples",
+      "file": "eps_hat_golden.json",
+      "count": 5,
+      "encoding": "json",
+      "notes": "5 test vectors for ε̂ computation"
+    },
+    {
+      "name": "epsilon_measured_examples",
+      "description": "Actual batch residual (ε) measurement examples",
+      "file": "eps_measured_golden.json",
+      "count": 5,
+      "encoding": "json",
+      "notes": "5 test vectors for ε measurement"
+    },
+    {
+      "name": "dag_ordering_examples",
+      "description": "DAG topological ordering examples",
+      "file": "dag_order_golden.json",
+      "count": 3,
+      "encoding": "json",
+      "notes": "3 DAG ordering test vectors"
+    },
+    {
+      "name": "debtunit_arithmetic",
+      "description": "DebtUnit exact integer arithmetic examples",
+      "file": "debtunit_golden.json",
+      "count": 10,
+      "encoding": "json",
+      "notes": "10 test vectors for DebtUnit operations"
+    },
+    {
+      "name": "v_functional_examples",
+      "description": "Violation functional V(x) computation examples",
+      "file": "v_functional_golden.json",
+      "count": 5,
+      "encoding": "json",
+      "notes": "5 test vectors for V(x)"
+    },
+    {
+      "name": "service_law_examples",
+      "description": "Service law S(D,B) computation examples",
+      "file": "service_law_golden.json",
+      "count": 5,
+      "encoding": "json",
+      "notes": "5 test vectors for service law"
+    },
+    {
+      "name": "id_canonicalization",
+      "description": "ID canonicalization examples (FieldID, OpID, etc)",
+      "file": "id_canon_golden.json",
+      "count": 8,
+      "encoding": "json",
+      "notes": "8 test vectors for ID canonicalization"
+    }
+  ],
+  "verification": {
+    "strict_mode": true,
+    "fail_on_mismatch": true,
+    "algorithm": "SHA-256"
+  }
+}

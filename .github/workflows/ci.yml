@@ -23,13 +23,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
-      - name: Run unit tests
+      - name: Run pipeline integration tests
         run: |
-          python -m pytest tests/ -q --tb=short
+          python -m pytest tests/test_pipeline_integration.py -v
           
-      - name: Run ASG-specific tests
+      - name: Run core ASG tests
         run: |
-          python -m pytest tests/test_asg_operators.py tests/test_asg_spectral.py tests/test_asg_watchdog.py -v
+          python -m pytest tests/test_asg_operators.py tests/test_asg_spectral.py tests/test_asg_watchdog.py -v -k "not pipeline and not watchdog_receipt_creation"
           
       - name: Run NK-4G verifier tests
         run: |

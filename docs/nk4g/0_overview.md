@@ -1,9 +1,9 @@
-# NK-4G v1.0: Geometric & Spectral Interpretation Layer
+# NK-4G v1.0: Governance Certificate Verification Layer
 
-**Version:** 1.0  
-**Status:** Non-structural analytic extension  
-**Depends on:** NK-1, NK-2, NK-3  
-**Does not modify execution semantics**
+**Version:** 1.0 (Revised)  
+**Status:** Canonical  
+**Depends on:** NK-1, NK-2, NK-3, ASG  
+**Purpose:** Audit protocol for spectral certificates
 
 ---
 
@@ -49,16 +49,34 @@ graph TD
     NK3[NK-3 Lowering] --> NK2[NK-2 Runtime]
     NK2 --> NK1[NK-1 Kernel]
     NK1 --> CK0[CK-0 Math]
+    CK0 --> NEC[NEC Dynamics]
+    NEC --> ASG[ASG Spectral]
+    ASG --> NK4G[(NK-4G Governance)]
     
-    NK1 -.-> NK4G[(NK-4G Interpretation)]
-    NK2 -.-> NK4G
-    NK3 -.-> NK4G
+    NK1 -.-> NK4G
+    ASG --> NK4G
     
     CK0 --> Receipts[Receipt Chain]
     NK1 --> Receipts
+    NK4G --> Receipts
 ```
 
-NK-4G is an **interpretive layer** that reads existing quantities and provides geometric analysis. It does not participate in the execution path.
+NK-4G is an **audit layer** that:
+- Consumes ASG spectral certificates
+- Verifies receipt consistency
+- Enforces policy thresholds
+
+## ASG Integration
+
+NK-4G consumes certificates from ASG (Adaptive Spectral Governance):
+
+| ASG Output | NK-4G Verification |
+|-----------|---------------------|
+| κ₀ (kappa_0) | κ₀ ≥ NK4G_KAPPA_MIN |
+| Γ_sem (gamma_sem) | Positive stiffness |
+| M (margin) | M ≥ NK4G_MARGIN_MIN |
+| operator_digest | Consistent with policy |
+| projector_id | Matches required projector |
 
 ---
 
@@ -67,6 +85,8 @@ NK-4G is an **interpretive layer** that reads existing quantities and provides g
 | Component | Relationship |
 |-----------|--------------|
 | CK-0 | Interprets V(x), δ, ε as geometric quantities |
+| NEC | Receives prox witness for drift/correction |
+| ASG | Consumes spectral certificates (κ₀, Γ_sem, margin) |
 | NK-1 | Uses PolicyBundle weights for metric; does not depend on NK-4G |
 | NK-2 | CTD rule interpretation; does not depend on NK-4G |
 | NK-3 | No direct relationship |

@@ -1,6 +1,6 @@
 # NK-1 PolicyBundle: PolicyBundle canonicalization + digest per docs/nk1/1_constants.md
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 import hashlib
@@ -134,6 +134,67 @@ class PolicyBundle:
 
 # Default policy bundle
 DEFAULT_POLICY = PolicyBundle()
+
+
+# Default NK-4G thresholds
+DEFAULT_NK4G_KAPPA_MIN = 1e-8
+DEFAULT_NK4G_MARGIN_MIN = 1.0
+
+
+class PolicyStatus(Enum):
+    """Policy evaluation status."""
+    PASS = "pass"
+    WARN = "warn"
+    HALT = "halt"
+
+
+def evaluate_nk4g_policy(
+    asg_certificate: Dict[str, Any],
+    policy: PolicyBundle
+) -> Tuple[PolicyStatus, Dict[str, Any]]:
+    """Evaluate NK-4G stability policy gates.
+    
+    Args:
+        asg_certificate: ASG certificate from receipt
+        policy: PolicyBundle with threshold settings
+        
+    Returns:
+        Tuple of (PolicyStatus, details_dict)
+    """
+    # Extract values
+    kappa_est = asg_certificate.get("kappa_est", 0.0)
+    margin = asg_certificate.get("semantic_margin", 0.0)
+    kappa_method_id = asg_certificate.get("kappa_method_id", "")
+    projector_id = asg_certificate.get("projector_id", "")
+    
+    # Get thresholds from policy
+    kappa_min = policy.nk4g_kappa_min if policy.nk4g_kappa_min is not None else DEFAULT_NK4G_KAPPA_MIN
+    margin_min = policy.nk4g_margin_min if policy.nk4g_margin_min is not None else DEFAULT_NK4G_MARGIN_MIN
+    
+    issues = []
+    status = PolicyStatus.PASS
+    
+    # Check κ₀ threshold (HALT if below)
+    if kappa_est < kappa_min:
+        issues.append(f"κ₀ ({kappa_est:.2e}) below minimum ({kappa_min:.2e})")
+        status = PolicyStatus.HALT
+    
+    # Check margin threshold (WARN if below, but not HALT)
+    elif margin < margin_min:
+        issues.append(f"Margin ({margin:.2f}) below minimum ({margin_min:.2f})")
+        status = PolicyStatus.WARN
+    
+    details = {
+        "kappa_est": kappa_est,
+        "margin": margin,
+        "kappa_min": kappa_min,
+        "margin_min": margin_min,
+        "issues": issues,
+        "kappa_method_id": kappa_method_id,
+        "projector_id": projector_id,
+    }
+    
+    return status, details
 
 
 def policy_digest_constant_check(

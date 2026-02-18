@@ -9,6 +9,7 @@ class ProjectorType(Enum):
     """Projector type identifiers"""
     MEAN_ZERO_THETA_V1 = "mean_zero_theta_v1"
     MEAN_ZERO_THETA_V2 = "mean_zero_theta_v2"
+    ASG_THETA_MEAN_ZERO_V1 = "asg.projector.theta_mean_zero.v1"
     CUSTOM = "custom"
 
 
@@ -18,6 +19,63 @@ class EstimationMethod(Enum):
     LOBPCG = "lobpcg"
     POWER = "power"
     EXACT = "exact"
+    EIGSH_SMALLEST_SA_V1 = "eigsh_smallest_sa.v1"
+
+
+@dataclass
+class ASGCertificate:
+    """ASG certificate fields for NK-4G receipts.
+    
+    This is the first-class ASG integration that NK-4G consumes.
+    """
+    # Model identification
+    model_id: str = "asg.zeta-theta-rho-G.v1"
+    
+    # Operator identification
+    operator_digest: str = ""
+    projector_id: str = "asg.projector.theta_mean_zero.v1"
+    
+    # Spectral certificates
+    kappa_est: float = 0.0
+    kappa_method_id: str = "eigsh_smallest_sa.v1"
+    kappa_tol: float = 1e-6
+    kappa_maxiter: int = 1000
+    
+    # Semantic certificate
+    gamma_sem: float = 0.0
+    semantic_dir_id: str = "asg.semantic.thetaG_rotation.v1"
+    semantic_margin: float = 0.0
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization"""
+        return {
+            "model_id": self.model_id,
+            "operator_digest": self.operator_digest,
+            "projector_id": self.projector_id,
+            "kappa_est": self.kappa_est,
+            "kappa_method_id": self.kappa_method_id,
+            "kappa_tol": self.kappa_tol,
+            "kappa_maxiter": self.kappa_maxiter,
+            "gamma_sem": self.gamma_sem,
+            "semantic_dir_id": self.semantic_dir_id,
+            "semantic_margin": self.semantic_margin,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ASGCertificate":
+        """Create from dictionary"""
+        return cls(
+            model_id=data.get("model_id", "asg.zeta-theta-rho-G.v1"),
+            operator_digest=data.get("operator_digest", ""),
+            projector_id=data.get("projector_id", "asg.projector.theta_mean_zero.v1"),
+            kappa_est=data.get("kappa_est", 0.0),
+            kappa_method_id=data.get("kappa_method_id", "eigsh_smallest_sa.v1"),
+            kappa_tol=data.get("kappa_tol", 1e-6),
+            kappa_maxiter=data.get("kappa_maxiter", 1000),
+            gamma_sem=data.get("gamma_sem", 0.0),
+            semantic_dir_id=data.get("semantic_dir_id", "asg.semantic.thetaG_rotation.v1"),
+            semantic_margin=data.get("semantic_margin", 0.0),
+        )
 
 
 @dataclass

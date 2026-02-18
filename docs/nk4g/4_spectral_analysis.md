@@ -31,7 +31,12 @@ The PSD property is **NOT** assumed automatically. It must be established via on
 1. **[ASSUMPTION]** Local smooth surrogate: Assume a smooth surrogate function Φ exists with H = ∇²Φ PSD on the reduced space
 2. **[MODEL]** ASG construction: Use H = O^T O where O is the residual Jacobian - this is **always PSD by construction**
 
-The second approach (ASG model) is the canonical v1 method, as it provides a computable, provably PSD Hessian without relying on unverified assumptions.
+The second approach (ASG model) is the **canonical v1 method**, as it provides a computable, provably PSD Hessian without relying on unverified assumptions.
+
+**ASG Integration:**
+- ASG model ID: `asg.zeta-theta-rho-G.v1`
+- ASG provides `H_perp = O_⊥^T O_⊥` which is PSD by construction
+- NK-4G consumes ASG spectral certificates: κ₀, Γ_sem, and margin
 
 ### Eigenvalue Decomposition
 

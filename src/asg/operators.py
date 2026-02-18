@@ -83,6 +83,57 @@ def build_mean_zero_projector(dimension: int) -> np.ndarray:
     return P_perp
 
 
+def build_4n_state_projector(N: int) -> np.ndarray:
+    """Build P_⊥ for 4N state: diag(I_ρ, P_θ, I_G, I_ζ)
+    
+    Only the θ block gets mean-zero projection.
+    ρ, G, ζ blocks remain identity (no constraint).
+    
+    This is the canonical ASG projector (v1):
+    - projector_id: "asg.projector.theta_mean_zero.v1"
+    
+    Args:
+        N: System size (number of nodes)
+        
+    Returns:
+        P_4N matrix of shape (4N, 4N) - block diagonal
+    """
+    from scipy import sparse
+    
+    # Mean-zero projector for θ block
+    P_theta = build_mean_zero_projector(N)
+    
+    # Build block diagonal: diag(I_ρ, P_θ, I_G, I_ζ)
+    # Each block is N×N
+    P_4N = sparse.block_diag([
+        np.eye(N),    # ρ block - identity
+        P_theta,       # θ block - mean-zero constraint
+        np.eye(N),    # G block - identity
+        np.eye(N)     # ζ block - identity
+    ])
+    
+    return P_4N.toarray()
+
+
+def apply_projector_to_state(state: np.ndarray, N: int) -> np.ndarray:
+    """Apply 4N state projector to a state vector.
+    
+    Only the θ block is mean-zero projected; other blocks unchanged.
+    
+    Args:
+        state: State vector of shape (4N,)
+        N: System size
+        
+    Returns:
+        Projected state vector of shape (4N,)
+    """
+    P_4N = build_4n_state_projector(N)
+    return P_4N @ state
+
+
+PROJECTOR_ID = "asg.projector.theta_mean_zero.v1"
+
+
 def build_laplacian_1d_ring(N: int) -> np.ndarray:
     """Build 1D ring Laplacian: L = D^T D
     

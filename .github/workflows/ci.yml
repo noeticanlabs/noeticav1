@@ -1,0 +1,129 @@
+name: Noetica CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run unit tests
+        run: |
+          python -m pytest tests/ -q --tb=short
+          
+      - name: Run ASG-specific tests
+        run: |
+          python -m pytest tests/test_asg_operators.py tests/test_asg_spectral.py tests/test_asg_watchdog.py -v
+          
+      - name: Run NK-4G verifier tests
+        run: |
+          python -m pytest tests/test_nk4g_verifier.py -v
+          
+  conformance:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          
+      - name: Validate conformance manifest
+        run: |
+          python -c "
+import json
+import hashlib
+from pathlib import Path
+
+manifest = json.load(open('conformance/conformance_manifest.json'))
+errors = []
+
+for artifact in manifest.get('artifacts', []):
+    filepath = Path('conformance') / artifact['file']
+    if not filepath.exists():
+        errors.append(f'Missing file: {artifact[\"file\"]}')
+        continue
+    
+    # Compute actual hash
+    sha256 = hashlib.sha256()
+    with open(filepath, 'rb') as f:
+        sha256.update(f.read())
+    actual_hash = sha256.hexdigest()
+    
+    if actual_hash != artifact.get('hash', ''):
+        errors.append(f'Hash mismatch: {artifact[\"file\"]}')
+
+if errors:
+    for e in errors:
+        print(f'ERROR: {e}')
+    exit(1)
+else:
+    print('Conformance manifest validated successfully')
+"
+          
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Check Python syntax
+        run: |
+          python -m py_compile src/asg/*.py src/nk1/*.py src/nk4g/*.py
+          
+      - name: Check documentation links
+        run: |
+          python -c "
+import re
+from pathlib import Path
+
+# Check for broken internal links in markdown files
+errors = []
+for md in Path('docs').rglob('*.md'):
+    content = md.read_text()
+    # Check for link patterns
+    links = re.findall(r'\[([^\]]+)\]\(([^\)]+)\)', content)
+    for text, link in links:
+        if link.startswith('http'):
+            continue
+        if link.startswith('#'):
+            continue
+        # Check if linked file exists
+        linked_path = md.parent / link
+        if not linked_path.exists() and not linked_path.with_suffix('.md').exists():
+            errors.append(f'{md}: broken link to {link}')
+
+if errors:
+    for e in errors:
+        print(f'ERROR: {e}')
+    exit(1)
+else:
+    print('Documentation links validated')
+"

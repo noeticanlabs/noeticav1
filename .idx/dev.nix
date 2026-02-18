@@ -24,7 +24,8 @@
   env = {
     # Point to user-local packages (installed via pip --target)
     # The .local directory contains packages that pip installs
-    PYTHONPATH = "/home/user/noeticav1/.local/lib/python3.11/site-packages:${pkgs.python311Packages.numpy}/lib/python3.11/site-packages:${pkgs.python311Packages.scipy}/lib/python3.11/site-packages";
+    # Also include nix-provided numpy and scipy packages (hardcoded paths for stability)
+    PYTHONPATH = "/home/user/noeticav1/.local/lib/python3.11/site-packages:/nix/store/5yyizx1n2586v6k2jip2w1hw5qr5k78y-python3.11-numpy-1.26.4/lib/python3.11/site-packages:/nix/store/l46hcr4bsvf7mkz4nchflrkb626mm5rx-python3.11-scipy-1.13.0/lib/python3.11/site-packages";
   };
 
   idx = {

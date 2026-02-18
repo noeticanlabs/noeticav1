@@ -2,8 +2,42 @@
 
 import numpy as np
 from typing import Optional, Tuple
+from dataclasses import dataclass
 from scipy import sparse
 from scipy.sparse.linalg import eigsh, lobpcg
+
+
+# Policy-identified κ₀ estimation method IDs
+KAPPA_METHOD_IDS = {
+    "eigsh_smallest_sa": "eigsh_smallest_sa.v1",
+    "lobpcg": "lobpcg.v1",
+    "power_iteration": "power_iteration.v1",
+}
+
+
+@dataclass
+class KappaEstimationResult:
+    """Policy-identified κ₀ estimation result with full audit trail."""
+    kappa_0: float
+    method_id: str           # e.g., "eigsh_smallest_sa.v1"
+    tolerance: float
+    max_iterations: int
+    notes: str
+
+
+@dataclass
+class SemanticMarginResult:
+    """Semantic margin computation result."""
+    gamma_sem: float
+    direction_id: str        # e.g., "asg.semantic.thetaG_rotation.v1"
+    u_ref_norm: float        # Norm of reference state
+    notes: str
+
+
+# Semantic direction version IDs
+SEMANTIC_DIR_IDS = {
+    "thetaG_rotation": "asg.semantic.thetaG_rotation.v1",
+}
 
 
 def estimate_kappa_0(
@@ -103,6 +137,144 @@ def estimate_kappa_0(
     return max(0.0, kappa)
 
 
+def estimate_kappa_0_policy(
+    hessian_perp: np.ndarray,
+    method: str = "eigsh",
+    k: int = 1
+) -> float:
+    """Estimate κ₀ = λ_min(H_⊥) - smallest eigenvalue of reduced Hessian.
+    
+    The smallest eigenvalue tells us the "stiffness floor" of the system.
+    If κ₀ > 0, the reduced Hessian is positive definite.
+    
+    Args:
+        hessian_perp: Projected Hessian (P_⊥ H P_⊥) of shape (n, n)
+        method: Estimation method - "eigsh", "lobpcg", or "power"
+        k: Number of eigenvalues to compute (for eigsh)
+        
+    Returns:
+        κ₀ estimate (≥ 0 by construction since H = O^T O)
+        
+    Note:
+        For H = O^T O, eigenvalues are guaranteed ≥ 0.
+        Numerical errors may produce tiny negative values; we clamp to 0.
+    """
+    n = hessian_perp.shape[0]
+    
+    if n == 0:
+        return 0.0
+    
+    if n == 1:
+        return max(0.0, hessian_perp[0, 0])
+    
+    # Use sparse if matrix is large
+    if n > 100:
+        hessian_sparse = sparse.csr_matrix(hessian_perp)
+    else:
+        hessian_sparse = None
+    
+    if method == "eigsh":
+        # Shifted power iteration to find smallest eigenvalue
+        # Use k=1 to find the smallest
+        try:
+            if hessian_sparse is not None:
+                eigenvalues, _ = eigsh(hessian_sparse, k=k, which='SA', maxiter=1000)
+            else:
+                eigenvalues, _ = np.linalg.eigvalsh(hessian_perp)
+                eigenvalues = np.sort(eigenvalues)[:k]
+        except Exception:
+            # Fallback to dense computation
+            eigenvalues = np.linalg.eigvalsh(hessian_perp)
+            eigenvalues = np.sort(eigenvalues)[:k]
+    
+    elif method == "power":
+        # Power method to find largest eigenvalue, then compute smallest
+        # via shift: λ_min = λ_max - shift
+        shift = np.trace(hessian_perp) / n  # Use mean as shift
+        H_shifted = hessian_perp - shift * np.eye(n)
+        
+        # Power iteration for largest eigenvalue of shifted matrix
+        v = np.random.rand(n)
+        v = v / np.linalg.norm(v)
+        
+        for _ in range(100):
+            Hv = H_shifted @ v
+            v_new = Hv / np.linalg.norm(Hv)
+            if np.abs(np.dot(v_new, v)) > 0.9999:
+                break
+            v = v_new
+        
+        lambda_max_shifted = np.dot(v, H_shifted @ v)
+        eigenvalues = [shift + lambda_max_shifted]
+    
+    elif method == "lobpcg":
+        #LOBPCG for large sparse matrices
+        # Initialize with random vectors
+        X = np.random.rand(n, min(k, n))
+        X = X / np.linalg.norm(X, axis=0)
+        
+        try:
+            if hessian_sparse is not None:
+                eigenvalues, _ = lobpcg(hessian_sparse, X, maxiter=200)
+            else:
+                # Fallback to dense
+                eigenvalues, _ = np.linalg.eigvalsh(hessian_perp)
+                eigenvalues = np.sort(eigenvalues)[:k]
+        except Exception:
+            eigenvalues = np.linalg.eigvalsh(hessian_perp)
+            eigenvalues = np.sort(eigenvalues)[:k]
+    
+    else:
+        raise ValueError(f"Unknown method: {method}")
+    
+    # κ₀ is the smallest eigenvalue
+    kappa = np.min(eigenvalues)
+    
+    # Clamp to 0 (numerical errors may give tiny negatives)
+    return max(0.0, kappa)
+
+
+def estimate_kappa_0_policy(
+    hessian_perp: np.ndarray,
+    method_id: str = "eigsh_smallest_sa.v1",
+    tolerance: float = 1e-6,
+    max_iterations: int = 1000
+) -> KappaEstimationResult:
+    """Policy-identified κ₀ estimation with full audit trail.
+    
+    This function provides a deterministic, auditable κ₀ estimate
+    that can be included in ASG receipts.
+    
+    Args:
+        hessian_perp: Projected Hessian (P_⊥ H P_⊥)
+        method_id: Policy-identified method (e.g., "eigsh_smallest_sa.v1")
+        tolerance: Eigensolver tolerance
+        max_iterations: Maximum iterations
+        
+    Returns:
+        KappaEstimationResult with full audit trail
+    """
+    # Map method_id to actual method
+    method_map = {
+        "eigsh_smallest_sa.v1": "eigsh",
+        "lobpcg.v1": "lobpcg",
+        "power_iteration.v1": "power",
+    }
+    
+    method = method_map.get(method_id, "eigsh")
+    
+    # Compute κ₀
+    kappa_0 = estimate_kappa_0(hessian_perp, method=method, k=1)
+    
+    return KappaEstimationResult(
+        kappa_0=kappa_0,
+        method_id=method_id,
+        tolerance=tolerance,
+        max_iterations=max_iterations,
+        notes=f"Computed via {method_id}"
+    )
+
+
 def compute_semantic_direction(
     state: np.ndarray,
     layout: "ASGStateLayout"
@@ -184,6 +356,44 @@ def compute_margin(gamma_sem: float, kappa_0: float) -> float:
         return float('inf') if gamma_sem > 0 else 0.0
     
     return gamma_sem / kappa_0
+
+
+def compute_semantic_margin_policy(
+    state: np.ndarray,
+    hessian_perp: np.ndarray,
+    layout: "ASGStateLayout",
+    direction_id: str = "asg.semantic.thetaG_rotation.v1"
+) -> SemanticMarginResult:
+    """Policy-identified semantic margin computation with full audit trail.
+    
+    This function provides a deterministic, auditable Γ_sem computation
+    that can be included in ASG receipts.
+    
+    Args:
+        state: Reference state vector (4N,)
+        hessian_perp: Projected Hessian H_⊥
+        layout: ASGStateLayout defining block structure
+        direction_id: Versioned semantic direction identifier
+        
+    Returns:
+        SemanticMarginResult with full audit trail
+    """
+    # Compute semantic direction
+    v_sem = compute_semantic_direction(state, layout)
+    
+    # Compute Γ_sem
+    gamma_sem = compute_semantic_rayleigh(hessian_perp, v_sem)
+    
+    # Compute reference state norm for audit
+    u_ref_norm = np.linalg.norm(state)
+    
+    return SemanticMarginResult(
+        gamma_sem=gamma_sem,
+        direction_id=direction_id,
+        u_ref_norm=u_ref_norm,
+        notes=f"Computed via {direction_id}"
+    )
+
 
 
 def compute_spectral_certificate(

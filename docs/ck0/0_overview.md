@@ -29,6 +29,26 @@ Everything else is an interface layer.
 
 ---
 
+## NEC: CK-0.5 Operational Layer
+
+**See also:** [`../nec/0_overview.md`](../nec/0_overview.md)
+
+NEC (Noetica Execution Calculus) sits between CK-0 (mathematical substrate) and NK-1/2/3 (runtime implementations). NEC defines the operational calculus that the runtime actually executes:
+
+| Layer | Type | Role |
+|-------|------|------|
+| CK-0 | Mathematical substrate | Defines V, invariants, service law |
+| NEC (CK-0.5) | Operational calculus | Defines batch execution, gate, split, receipts |
+| NK-1/2/3 | Implementation | Runtime implementations of NEC |
+
+NEC provides:
+- Deterministic batching semantics
+- Gate law for safe aggregation
+- Split law for deterministic failure handling
+- Receipt witness for verifiable descent
+
+---
+
 ## CK-0 Core Definition
 
 A system is **coherent** over a run if, for every step *k*:

@@ -57,7 +57,12 @@ class TestInputBundle(unittest.TestCase):
     
     def test_validate_valid(self):
         bundle = InputBundle(
-            program_nsc=NSCProgram(entry="main", decls=[]),
+            program_nsc=NSCProgram(
+                entry="main", 
+                decls=[],
+                policy_digest="h:abc",
+                kernel_registry_digest="h:def"
+            ),
             policy_bundle=PolicyBundleRef(policy_bundle_id="pb:001", policy_digest="h:abc"),
             kernel_registry=KernelRegistryRef(kernel_registry_digest="h:def")
         )

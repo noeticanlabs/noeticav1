@@ -20,7 +20,7 @@ class TestProxWatchdog(unittest.TestCase):
         watchdog = create_watchdog(N=16)
         
         self.assertIsNotNone(watchdog)
-        self.assertEqual(watchdog.projector_id, "asg.projector.theta_mean_zero.v1")
+        self.assertEqual(watchdog.projector_id, "asg.projector.4n_state_perp.v1")
     
     def test_compute_v(self):
         """V computation works"""

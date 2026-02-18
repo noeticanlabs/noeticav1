@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple, List
 
 from .types import ASGParams, ASGReceipt, ASGStateLayout
-from .operators import build_mean_zero_projector, PROJECTOR_ID
+from .operators import build_mean_zero_projector, build_4n_state_projector, PROJECTOR_ID
 from .assembly import assemble_full_jacobian, assemble_hessian_model, compute_operator_digest, compute_state_digest, compute_params_digest
 from .spectral import estimate_kappa_0, compute_semantic_direction, compute_semantic_rayleigh, compute_margin
 
@@ -34,9 +34,11 @@ class ProxWatchdog:
         self.params = params
         self.topology = topology
         
-        # Build projector for theta block
-        self.projector = build_mean_zero_projector(params.state_layout.dimension)
-        self.projector_id = PROJECTOR_ID  # "asg.projector.theta_mean_zero.v1"
+        # Build 4N state projector (block-diagonal with identity on rho, G, zeta
+        # blocks and mean-zero constraint on theta block)
+        # This is P_perp = diag(I_rho, P_theta_perp, I_G, I_zeta)
+        self.projector = build_4n_state_projector(params.state_layout.dimension)
+        self.projector_id = "asg.projector.4n_state_perp.v1"
         
         # Assemble Jacobian and Hessian
         self.jacobian = assemble_full_jacobian(params, topology)

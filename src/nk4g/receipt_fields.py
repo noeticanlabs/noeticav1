@@ -33,7 +33,7 @@ class ASGCertificate:
     
     # Operator identification
     operator_digest: str = ""
-    projector_id: str = "asg.projector.theta_mean_zero.v1"
+    projector_id: str = "asg.projector.4n_state_perp.v1"
     
     # Spectral certificates
     kappa_est: float = 0.0

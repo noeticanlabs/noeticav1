@@ -94,7 +94,7 @@ class TestPipelineIntegration(unittest.TestCase):
         cert = ASGCertificate(
             model_id="asg.zeta-theta-rho-G.v1",
             operator_digest="abc123",
-            projector_id="asg.projector.theta_mean_zero.v1",
+            projector_id="asg.projector.4n_state_perp.v1",
             kappa_est=0.5,
             kappa_method_id="eigsh_smallest_sa.v1",
             kappa_tol=1e-6,
@@ -109,7 +109,7 @@ class TestPipelineIntegration(unittest.TestCase):
         
         # Verify all fields present
         self.assertEqual(cert_dict["model_id"], "asg.zeta-theta-rho-G.v1")
-        self.assertEqual(cert_dict["projector_id"], "asg.projector.theta_mean_zero.v1")
+        self.assertEqual(cert_dict["projector_id"], "asg.projector.4n_state_perp.v1")
         self.assertEqual(cert_dict["kappa_method_id"], "eigsh_smallest_sa.v1")
         self.assertEqual(cert_dict["semantic_dir_id"], "asg.semantic.thetaG_rotation.v1")
         
@@ -126,7 +126,7 @@ class TestPipelineIntegration(unittest.TestCase):
             "kappa_est": 0.1,
             "semantic_margin": 2.0,
             "kappa_method_id": "eigsh_smallest_sa.v1",
-            "projector_id": "asg.projector.theta_mean_zero.v1",
+            "projector_id": "asg.projector.4n_state_perp.v1",
         }
         
         # Evaluate policy
@@ -148,7 +148,7 @@ class TestPipelineIntegration(unittest.TestCase):
             "kappa_est": 1e-10,  # Below threshold
             "semantic_margin": 2.0,
             "kappa_method_id": "eigsh_smallest_sa.v1",
-            "projector_id": "asg.projector.theta_mean_zero.v1",
+            "projector_id": "asg.projector.4n_state_perp.v1",
         }
         
         # Evaluate policy
@@ -170,7 +170,7 @@ class TestPipelineIntegration(unittest.TestCase):
             "kappa_est": 0.1,  # OK κ₀
             "semantic_margin": 1.0,  # Below threshold
             "kappa_method_id": "eigsh_smallest_sa.v1",
-            "projector_id": "asg.projector.theta_mean_zero.v1",
+            "projector_id": "asg.projector.4n_state_perp.v1",
         }
         
         # Evaluate policy
@@ -186,7 +186,7 @@ class TestPipelineIntegration(unittest.TestCase):
         watchdog = create_watchdog(N=8)
         
         # Verify projector ID is canonical
-        self.assertEqual(watchdog.projector_id, "asg.projector.theta_mean_zero.v1")
+        self.assertEqual(watchdog.projector_id, "asg.projector.4n_state_perp.v1")
         
         # Create test states - for prox inequality to pass:
         # V(x_{k+1}) <= V(z_k) - (1/2λ_k) * ||x_{k+1} - z_k||^2
@@ -259,7 +259,7 @@ class TestPipelineIntegration(unittest.TestCase):
         asg_cert = ASGCertificate(
             model_id="asg.zeta-theta-rho-G.v1",
             operator_digest="test_digest",
-            projector_id="asg.projector.theta_mean_zero.v1",
+            projector_id="asg.projector.4n_state_perp.v1",
             kappa_est=kappa_result.kappa_0,
             kappa_method_id=kappa_result.method_id,
             gamma_sem=sem_result.gamma_sem,

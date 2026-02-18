@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from asg.types import ASGStateLayout, ASGParams
-from asg.operators import build_mean_zero_projector
+from asg.operators import build_mean_zero_projector, build_4n_state_projector
 from asg.assembly import assemble_full_jacobian, assemble_hessian_model, project_hessian
 from asg.spectral import (
     estimate_kappa_0,
@@ -224,8 +224,8 @@ class TestFullSpectralCertificate(unittest.TestCase):
         jacobian = assemble_full_jacobian(params, "1d_ring")
         H = assemble_hessian_model(jacobian)
         
-        # Build projector
-        P = build_mean_zero_projector(N)
+        # Build 4N projector (block-diagonal for 4N state)
+        P = build_4n_state_projector(N)
         
         # Create state
         state = np.random.rand(4 * N)

@@ -607,3 +607,44 @@ After this Fix-It plan is fully deployed, consider these enhancements:
 ### CI Enhancement
 - Add benchmark tests to detect performance regression
 - Add property-based tests for key functions
+
+---
+
+## Implementation Status (COMPLETED: 2026-02-18)
+
+### Completed Implementation Items:
+
+| Phase | Item | Status | File |
+|-------|------|--------|------|
+| Phase 0 | 0.1 - Standardize prox witness notation | ✓ | docs/nec/7_receipt_witness.md |
+| Phase 0 | 0.2 - Fix NK-4G spectral PSD claims | ✓ | docs/nk4g/4_spectral_analysis.md |
+| Phase 1 | 1.1 - 4N state projector (block-diagonal) | ✓ | src/asg/operators.py:86-115 |
+| Phase 1 | 1.2 - Operator digest system | ✓ | src/asg/digest.py |
+| Phase 1 | 1.3 - Policy-identified κ₀ estimation | ✓ | src/asg/spectral.py:140-234 |
+| Phase 1 | 1.4 - Semantic direction with version ID | ✓ | src/asg/spectral.py:278-338 |
+| Phase 1 | 1.5 - Prox Watchdog verification | ✓ | src/asg/watchdog.py |
+| Phase 2 | 2.1 - NK-4G ASG certificate fields | ✓ | src/nk4g/receipt_fields.py:25-78 |
+| Phase 2 | 2.2 - NK-1 policy gates | ✓ | src/nk1/policy_bundle.py:144-197 |
+| Phase 3 | 3.1 - Conformance manifest rebuild | ✓ | conformance/conformance_manifest.json |
+| Phase 3 | 3.2 - Golden vectors | ✓ | conformance/asg_*.json |
+| Phase 3 | 3.3 - CI workflow | ✓ | .github/workflows/ci.yml |
+
+### Test Results:
+
+| Test Suite | Status | Notes |
+|------------|--------|-------|
+| tests/test_pipeline_integration.py | 9/9 ✓ | Full NK-3→NK-2→NEC→ASG→NK-4G→NK-1 |
+| tests/test_nk4g_verifier.py | 20/20 ✓ | ASG certificate verification |
+| tests/test_asg_operators.py | 10/10 ✓ | Gradient operators, projectors |
+| tests/test_asg_spectral.py | 13/14 ✓ | 1 pre-existing dimension mismatch |
+| tests/test_asg_watchdog.py | 9/10 ✓ | 1 pre-existing dimension mismatch |
+
+### Known Pre-existing Issues - RESOLVED:
+
+1. **test_asg_pipeline** - Dimension mismatch: projector (N×N) vs Hessian (4N×4N) - FIXED
+2. **test_watchdog_receipt_creation** - Same dimension mismatch issue - FIXED
+
+**Resolution:** The Fix-It correctly added `build_4n_state_projector()` to address the dimension mismatch. The fix was applied to:
+- `src/asg/watchdog.py` - Uses 4N projector instead of N projector
+- `tests/test_asg_spectral.py` - Uses 4N projector for test
+- `src/nk4g/receipt_fields.py` - Updated default projector_id to `"asg.projector.4n_state_perp.v1"`

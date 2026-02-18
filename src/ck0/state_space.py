@@ -55,9 +55,15 @@ class State:
     - All field values must match their field type constraints
     - Field IDs must be valid per canonical ID rules
     - State is immutable after construction
+    
+    Per NK-1 §1.1:
+    - State = (schema_id, fields, meta)
+    - meta is EXCLUDED from canonical bytes and hash
     """
+    schema_id: str = ""
     field_blocks: List[FieldBlock] = field(default_factory=list)
     _field_values: Dict[str, Any] = field(default_factory=dict)
+    _meta: Optional[Dict[str, Any]] = field(default_factory=dict)
     _hash: Optional[str] = field(default=None, repr=False)
     
     def get_field(self, field_id: str) -> Any:
@@ -180,9 +186,9 @@ class State:
         return sorted(items, key=lambda x: x.encode('utf-8'))
     
     @staticmethod
-    def from_dict(data: Dict[str, Any], field_blocks: List[FieldBlock]) -> 'State':
+    def from_dict(data: Dict[str, Any], field_blocks: List[FieldBlock], schema_id: str = "") -> 'State':
         """Construct State from dictionary."""
-        state = State(field_blocks=field_blocks, _field_values=data)
+        state = State(schema_id=schema_id, field_blocks=field_blocks, _field_values=data)
         return state
 
 

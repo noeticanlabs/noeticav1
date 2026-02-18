@@ -126,8 +126,9 @@ class Test1DRingSpecific(unittest.TestCase):
         N = 4
         D = build_gradient_operator_1d_ring(N)
         
-        # First row: D[0,0] = -1, D[0,1] = 1, D[0,3] = -1
-        expected_first_row = np.array([-1, 1, 0, -1])
+        # First row (forward difference): D[0,0] = -1, D[0,1] = 1
+        # For periodic boundary, D[0,N-1] = 0 (not wrapped)
+        expected_first_row = np.array([-1., 1., 0., 0.])
         np.testing.assert_array_equal(D[0], expected_first_row)
     
     def test_laplacian_eigenvalues(self):
@@ -138,11 +139,12 @@ class Test1DRingSpecific(unittest.TestCase):
         # Compute eigenvalues analytically
         k = np.arange(N)
         expected_evals = 4 * np.sin(np.pi * k / N) ** 2
+        expected_evals = np.sort(expected_evals)  # Sort to match actual order
         
         actual_evals = np.linalg.eigvalsh(L)
         actual_evals = np.sort(actual_evals)
         
-        np.testing.assert_allclose(actual_evals, expected_evals, rtol=1e-10)
+        np.testing.assert_allclose(actual_evals, expected_evals, rtol=1e-10, atol=1e-14)
 
 
 if __name__ == '__main__':

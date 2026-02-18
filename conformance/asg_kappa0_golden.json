@@ -1,0 +1,59 @@
+{
+  "version": "v1.0",
+  "created": "2026-02-18",
+  "description": "ASG κ₀ golden vectors for conformance testing",
+  "test_vectors": [
+    {
+      "name": "1d_ring_n32_identity_hessian",
+      "description": "κ₀ for identity Hessian on 1D ring N=32",
+      "input": {
+        "topology": "1d_ring",
+        "N": 32,
+        "hessian_type": "identity",
+        "alpha_l": 1.0,
+        "alpha_g": 1.0,
+        "w_theta": 1.0
+      },
+      "expected": {
+        "kappa_0": 1.0,
+        "tolerance": 1e-6,
+        "notes": "For identity Hessian, κ₀ = 1.0 after projection"
+      }
+    },
+    {
+      "name": "1d_ring_n32_scaled_hessian",
+      "description": "κ₀ for scaled Hessian on 1D ring N=32",
+      "input": {
+        "topology": "1d_ring",
+        "N": 32,
+        "hessian_scale": 2.0,
+        "alpha_l": 1.0,
+        "alpha_g": 1.0,
+        "w_theta": 1.0
+      },
+      "expected": {
+        "kappa_0": 2.0,
+        "tolerance": 1e-6,
+        "notes": "κ₀ scales linearly with Hessian"
+      }
+    },
+    {
+      "name": "1d_ring_n16_random_seed42",
+      "description": "κ₀ for random PSD Hessian N=16, seed 42",
+      "input": {
+        "topology": "1d_ring",
+        "N": 16,
+        "hessian_type": "random_psd",
+        "seed": 42,
+        "alpha_l": 1.0,
+        "alpha_g": 1.0,
+        "w_theta": 1.0
+      },
+      "expected": {
+        "kappa_0": "TODO: compute",
+        "tolerance": 1e-6,
+        "notes": "Must be reproducible from seed"
+      }
+    }
+  ]
+}

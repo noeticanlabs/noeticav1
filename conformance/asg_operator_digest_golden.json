@@ -1,0 +1,56 @@
+{
+  "version": "v1.0",
+  "created": "2026-02-18",
+  "description": "ASG operator digest golden vectors for 1D ring topology",
+  "test_vectors": [
+    {
+      "name": "1d_ring_n32_default",
+      "description": "1D ring with N=32, default parameters",
+      "input": {
+        "topology": "1d_ring",
+        "N": 32,
+        "alpha_l": 1.0,
+        "alpha_g": 1.0,
+        "w_theta": 1.0
+      },
+      "expected": {
+        "operator_digest": "TODO: compute actual digest",
+        "jacobian_rows": 96,
+        "hessian_dim": 128,
+        "notes": "Digest depends on exact parameter values"
+      }
+    },
+    {
+      "name": "1d_ring_n16_default",
+      "description": "1D ring with N=16, default parameters",
+      "input": {
+        "topology": "1d_ring",
+        "N": 16,
+        "alpha_l": 1.0,
+        "alpha_g": 1.0,
+        "w_theta": 1.0
+      },
+      "expected": {
+        "operator_digest": "TODO: compute actual digest",
+        "jacobian_rows": 48,
+        "hessian_dim": 64
+      }
+    },
+    {
+      "name": "1d_ring_n8_small",
+      "description": "1D ring with N=8, small parameters",
+      "input": {
+        "topology": "1d_ring",
+        "N": 8,
+        "alpha_l": 0.5,
+        "alpha_g": 0.5,
+        "w_theta": 0.5
+      },
+      "expected": {
+        "operator_digest": "TODO: compute actual digest",
+        "jacobian_rows": 24,
+        "hessian_dim": 32
+      }
+    }
+  ]
+}

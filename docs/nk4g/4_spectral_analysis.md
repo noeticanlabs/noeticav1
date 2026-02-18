@@ -23,7 +23,15 @@ Where:
 
 The Hessian H is:
 - **Symmetric**: H = H^T (by equality of mixed partials)
-- **Positive semidefinite**: λ_i ≥ 0 for all eigenvalues (coherence implies convex-like behavior locally)
+
+**PSD Guarantee:**
+
+The PSD property is **NOT** assumed automatically. It must be established via one of:
+
+1. **[ASSUMPTION]** Local smooth surrogate: Assume a smooth surrogate function Φ exists with H = ∇²Φ PSD on the reduced space
+2. **[MODEL]** ASG construction: Use H = O^T O where O is the residual Jacobian - this is **always PSD by construction**
+
+The second approach (ASG model) is the canonical v1 method, as it provides a computable, provably PSD Hessian without relying on unverified assumptions.
 
 ### Eigenvalue Decomposition
 
@@ -57,30 +65,38 @@ Properties:
 
 ## 4.3 Split Scheme
 
-### Definition 4.3: Discrete Step Operator
+### Definition 4.3: Discrete Step Operator (NK-4G v1)
 
-The discrete step combines repair (via H) and resonance (via A):
+**NK-4G v1 uses unitary drift + prox, NOT the (I + τH)⁻¹(I + τA) form.**
+
+The canonical NK-4G split scheme:
 
 ```
-x_{k+1} = T_τ x_k
+z_k = U_τ x_k       (drift/proposal from model)
+x_{k+1} = prox_{λ_k V}(z_k)  (correction)
 ```
 
 Where:
+- U_τ: Unitary drift operator (may increase V)
+- prox_{λV}: Proximal minimization with parameter λ_k
+- The step operator form depends on the specific dynamics model
 
+**Alternative form (for linear/quadratic V):**
+
+If V is quadratic, the prox has closed form:
 ```
-T_τ = (I + τ H)^{-1} (I + τ A)
+x_{k+1} = (I + λ_k G)^{-1} · z_k
 ```
 
-This is a **split scheme**:
-- **Implicit repair**: (I + τ H)^{-1} dissipates toward minima
-- **Explicit resonance**: (I + τ A) adds rotation/drift
+This is different from the implicit-explicit (I+τH)⁻¹(I+τA) form presented in some literature.
 
 ### Interpretation
 
 | Component | Effect |
 |-----------|--------|
-| (I + τ H)^{-1} | Contraction toward coherent state |
-| (I + τ A) | Resonance/rotation causing drift |
+| z_k = U_τ x_k | Drift - may increase V (unlike standard gradient flow) |
+| prox_{λV}(z_k) | Correction - reduces V from drift point |
+| λ_k | Prox parameter (not τ) |
 
 ---
 
@@ -96,7 +112,9 @@ The stability of the discrete step is determined by:
 
 Where ρ is the spectral radius (maximum absolute eigenvalue).
 
-### Lemma 4.1: Stability Inequality
+### Lemma 4.1: Stability Inequality (HEURISTIC)
+
+**[HEURISTIC - pending formal derivation]**
 
 For each eigenvalue λ_i of H and imaginary eigenvalue iω_i of A:
 
@@ -112,7 +130,9 @@ If λ_i ≥ ω_i:
 τ ≤ ∞  (unconditional stability)
 ```
 
-### Proof Sketch
+**Note:** This lemma assumes the (I + τH)⁻¹(I + τA) form which is NOT the canonical NK-4G v1 scheme. For the canonical unitary drift + prox scheme, stability follows from κ₀ > 0 (ASG certificate).
+
+### Proof Sketch (for alternative form)
 
 ```
 T_τ = (I + τ H)^{-1}(I + τ A)

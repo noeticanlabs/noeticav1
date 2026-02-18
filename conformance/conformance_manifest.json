@@ -99,6 +99,30 @@
       "count": 8,
       "encoding": "json",
       "notes": "8 test vectors for ID canonicalization"
+    },
+    {
+      "name": "asg_operator_digest",
+      "description": "ASG operator digest golden vectors",
+      "file": "asg_operator_digest_golden.json",
+      "count": 3,
+      "encoding": "json",
+      "notes": "3 test vectors for operator digest"
+    },
+    {
+      "name": "asg_kappa0",
+      "description": "ASG κ₀ (kappa_0) golden vectors",
+      "file": "asg_kappa0_golden.json",
+      "count": 3,
+      "encoding": "json",
+      "notes": "3 test vectors for κ₀ estimation"
+    },
+    {
+      "name": "asg_watchdog_receipt",
+      "description": "ASG watchdog receipt golden vectors",
+      "file": "asg_watchdog_receipt_golden.json",
+      "count": 3,
+      "encoding": "json",
+      "notes": "3 test vectors for prox inequality verification"
     }
   ],
   "verification": {

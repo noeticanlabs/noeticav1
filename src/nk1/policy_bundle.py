@@ -62,6 +62,14 @@ class PolicyBundle:
     # Additional policies
     extra: Dict[str, Any] = field(default_factory=dict)
     
+    # NK-4G/ASG spectral governance thresholds
+    nk4g_kappa_min: Optional[float] = None  # Minimum κ₀ threshold
+    nk4g_margin_min: Optional[float] = None  # Minimum semantic margin
+    nk4g_projector_id: Optional[str] = None  # Required projector type
+    nk4g_estimation_method: Optional[str] = None  # κ₀ estimation method
+    asg_model_id: Optional[str] = None  # Residual architecture version
+    asg_topology: Optional[str] = None  # "1d_ring" or "2d_torus"
+    
     # Computed
     _digest: Optional[str] = field(default=None, repr=False)
     

@@ -8,40 +8,58 @@
 
 ### Definition 7.1: ProxWitness
 
-The receipt contains a witness inequality that proves descent:
+The receipt contains a witness inequality that proves proximal correction in the split model:
 
 ```
-V(x_{k+1}) ≤ V(x_k) - (1 / (2·τ·g_k)) · |x_{k+1} - y_k|_G²
+V(x_{k+1}) ≤ V(z_k) - (1 / (2·λ_k)) · |x_{k+1} - z_k|_G²
 ```
+
+**Canonical Split Model:**
+- **Drift**: z_k = U_τ x_k (proposal from model, may increase V)
+- **Correction**: x_{k+1} = prox_{λ_k V}(z_k) = argmin_x { V(x) + (1/2λ_k)|x-z_k|_G² }
+- **Witness**: V(x_{k+1}) ≤ V(z_k) - (1/2λ_k)||x_{k+1}-z_k||_G²
 
 Where:
 - x_k: State before batch
-- x_{k+1}: State after batch
-- y_k: Proximal point
-- τ: Step size parameter
-- g_k: Gradient norm factor
+- z_k: **Drift point** (proposal from model, replaces old y_k)
+- x_{k+1}: State after correction
+- λ_k: Prox parameter (renamed from τ for consistency)
 - |·|_G²: G-norm squared
+
+**Note:** V(z_k) may be > V(x_k) due to drift. The witness proves correction reduces V from the drift point, not from the original state.
 
 ---
 
-## 7.2 Proximal Point
+## 7.2 Drift and Correction Points
 
-### Definition 7.2: Proximal Point
+### Definition 7.2: Drift Point z_k
 
-The proximal point y_k is computed from x_k and the batch:
+The drift point is the state after applying the model's proposal/evolution:
 
 ```
-y_k = argmin_y { V(y) + (1/(2·τ)) · |x_k - y|_G² }
+z_k = U_τ x_k
+```
+
+Where U_τ represents the model dynamics (e.g., unitary drift, resonance operator).
+
+**Important:** z_k may have V(z_k) > V(x_k) - drift can increase violation.
+
+### Definition 7.2b: Correction (Proximal)
+
+The correction point is the result of proximal minimization:
+
+```
+x_{k+1} = prox_{λ_k V}(z_k) = argmin_x { V(x) + (1/(2·λ_k)) · |x - z_k|_G² }
 ```
 
 This is the implicit step that gives NEC its stability properties.
 
 ### Implementation
 
-For linear/quadratic V:
+For linear/quadratic V with scalar λ:
 
 ```
-y_k = (I + τ·G)^{-1} · x_k
+x_{k+1} = (I + λ_k·G)^{-1} · z_k
 ```
 
 ---
@@ -54,19 +72,21 @@ y_k = (I + τ·G)^{-1} · x_k
 |-------|-------------|
 | V_before | V(x_k) |
 | V_after | V(x_{k+1}) |
+| V_drift | V(z_k) - **NEW: drift point violation** |
 | x_before | emb(x_k) |
 | x_after | emb(x_{k+1}) |
-| y_k | Proximal point |
-| tau | Step size τ |
-| g_k | Gradient factor |
+| z_k | **Drift point** (replaces old y_k) |
+| lambda_k | Prox parameter λ_k (renamed from tau) |
 
 ### Witness Computation
 
 ```
-witness = V_after - V_before + (1/(2*tau*g_k)) * norm_G_sq(x_after - y_k)
+witness = V_after - V_drift + (1/(2*lambda_k)) * norm_G_sq(x_after - z_k)
 ```
 
 Witness must be ≤ 0 for valid receipt.
+
+**Note:** V_drift = V(z_k) may be > V_before. The witness proves correction from drift, not from original state.
 
 ---
 
@@ -77,7 +97,7 @@ Witness must be ≤ 0 for valid receipt.
 The verifier checks:
 
 ```
-V_after ≤ V_before - (1/(2*tau*g_k)) * |x_after - y|_G²
+V_after ≤ V_drift - (1/(2*lambda_k)) * |x_after - z_k|_G²
 ```
 
 All values are DebtUnit integers.
@@ -87,9 +107,11 @@ All values are DebtUnit integers.
 ```
 def verify_witness(receipt):
     lhs = receipt.V_after
-    rhs = receipt.V_before - (receipt.tau_factor) * norm_G_sq(receipt.x_after - receipt.y)
+    rhs = receipt.V_drift - (1/(2*receipt.lambda_k)) * norm_G_sq(receipt.x_after - receipt.z_k)
     return lhs <= rhs
 ```
+
+**Note:** This verifies correction from drift point z_k, not from original state x_k.
 
 ---
 
@@ -99,12 +121,19 @@ def verify_witness(receipt):
 
 The witness inequality is the **load-bearing algebraic guarantee**:
 
-- Proves V never increases
-- Bounds total energy expended
+- Proves V decreases from drift point: V(x_{k+1}) ≤ V(z_k)
+- **Note:** V(z_k) may be > V(x_k) due to drift. The witness proves correction, not that V never increases.
+- Bounds total energy expended in correction step
 - Enables replay verification
 - Ensures termination
 
 Without this inequality, receipts would not prove coherence.
+
+**Split Model Property:**
+```
+V(x_{k+1}) ≤ V(z_k) - (1/2λ_k)||x_{k+1}-z_k||² ≤ V(z_k)
+```
+The inequality proves correction reduces V from the drift point, not from the original state.
 
 ---
 

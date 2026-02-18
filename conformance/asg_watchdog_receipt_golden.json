@@ -1,0 +1,64 @@
+{
+  "version": "v1.0",
+  "created": "2026-02-18",
+  "description": "ASG watchdog receipt golden vectors for prox inequality verification",
+  "test_vectors": [
+    {
+      "name": "prox_pass_case",
+      "description": "Prox inequality passes - V decreases from drift point",
+      "input": {
+        "v_before": 1.0,
+        "v_drift": 1.2,
+        "v_after": 0.8,
+        "lambda_k": 0.1,
+        "norm_squared": 0.04,
+        "max_drift_ratio": 2.0,
+        "drift_ratio": 0.5
+      },
+      "expected": {
+        "prox_pass": true,
+        "drift_pass": true,
+        "watchdog_pass": true,
+        "notes": "V_after < V_drift - norm_sq/(2*lambda)"
+      }
+    },
+    {
+      "name": "prox_fail_case",
+      "description": "Prox inequality fails - V increases from drift point",
+      "input": {
+        "v_before": 1.0,
+        "v_drift": 1.0,
+        "v_after": 1.5,
+        "lambda_k": 0.1,
+        "norm_squared": 0.01,
+        "max_drift_ratio": 2.0,
+        "drift_ratio": 0.1
+      },
+      "expected": {
+        "prox_pass": false,
+        "drift_pass": true,
+        "watchdog_pass": false,
+        "notes": "V_after > V_drift - norm_sq/(2*lambda)"
+      }
+    },
+    {
+      "name": "drift_fail_case",
+      "description": "Drift exceeds maximum ratio",
+      "input": {
+        "v_before": 1.0,
+        "v_drift": 3.0,
+        "v_after": 1.5,
+        "lambda_k": 0.1,
+        "norm_squared": 0.01,
+        "max_drift_ratio": 2.0,
+        "drift_ratio": 5.0
+      },
+      "expected": {
+        "prox_pass": true,
+        "drift_pass": false,
+        "watchdog_pass": false,
+        "notes": "||drift||/||original|| > max_drift_ratio"
+      }
+    }
+  ]
+}

@@ -10,7 +10,8 @@ from .types import ASGParams, ASGStateLayout, ResidualConfig
 
 def assemble_jacobian(
     params: ASGParams,
-    residuals: List[Callable[[np.ndarray], np.ndarray]]
+    residuals: List[Callable[[np.ndarray], np.ndarray]],
+    state: Optional[np.ndarray] = None
 ) -> np.ndarray:
     """Assemble Jacobian matrix O from residual functions.
     
@@ -19,6 +20,8 @@ def assemble_jacobian(
     Args:
         params: ASG parameters
         residuals: List of residual functions r_i(state) -> residual vector
+        state: Optional state vector to compute Jacobian at.
+               If None, falls back to diagonal approximation.
         
     Returns:
         O matrix of shape (m, 4N) where m is total residual dimension
@@ -26,20 +29,73 @@ def assemble_jacobian(
     N = params.state_layout.dimension
     state_dim = 4 * N
     
-    # Compute Jacobian for each residual numerically
-    jacobian_blocks = []
+    # If no state provided, use diagonal approximation (backward compatible)
+    if state is None:
+        return _assemble_jacobian_diagonal(params, residuals, N, state_dim)
     
+    # Compute true Jacobian using finite differences
+    return _assemble_jacobian_finite_difference(params, residuals, state, N, state_dim)
+
+
+def _assemble_jacobian_finite_difference(
+    params: ASGParams,
+    residuals: List[Callable[[np.ndarray], np.ndarray]],
+    state: np.ndarray,
+    N: int,
+    state_dim: int
+) -> np.ndarray:
+    """Compute true Jacobian using finite differences."""
     eps = 1e-8  # Finite difference step
     
+    # First compute residual at current point to get dimensions
+    r0 = residuals[0](state)
+    residual_dim = len(r0)
+    total_residual_dim = residual_dim * len(residuals)
+    
+    # Initialize Jacobian matrix
+    O = np.zeros((total_residual_dim, state_dim), dtype=np.float64)
+    
+    # Compute Jacobian for each residual function
     for i, res_fn in enumerate(residuals):
         # Get residual at current point
-        # Note: In practice, we'd need the actual state. For now, return shape info
-        # This is a placeholder - actual implementation would compute J_i
-        pass
+        r0 = res_fn(state)
+        m = len(r0)
+        
+        # Compute Jacobian columns via central differences
+        J_i = np.zeros((m, state_dim), dtype=np.float64)
+        
+        for j in range(state_dim):
+            # Central difference for better accuracy
+            state_plus = state.copy()
+            state_minus = state.copy()
+            state_plus[j] += eps
+            state_minus[j] -= eps
+            
+            r_plus = res_fn(state_plus)
+            r_minus = res_fn(state_minus)
+            
+            # Central difference: (f(x+h) - f(x-h)) / (2h)
+            J_i[:, j] = (r_plus - r_minus) / (2 * eps)
+        
+        # Apply weight sqrt
+        weight = params.weights[i] if i < len(params.weights) else 1.0
+        sqrt_weight = np.sqrt(weight)
+        
+        # Store in Jacobian matrix
+        row_start = i * m
+        O[row_start:row_start + m, :] = sqrt_weight * J_i
     
-    # Placeholder: return identity-scaled Jacobian
-    # In full implementation, this computes actual J_i for each residual
-    total_residual_dim = len(residuals) * N  # Assuming N-dim residuals
+    return O
+
+
+def _assemble_jacobian_diagonal(
+    params: ASGParams,
+    residuals: List[Callable[[np.ndarray], np.ndarray]],
+    N: int,
+    state_dim: int
+) -> np.ndarray:
+    """Fallback diagonal approximation when no state provided."""
+    total_residual_dim = len(residuals) * N
     O = np.zeros((total_residual_dim, state_dim), dtype=np.float64)
     
     # Diagonal blocks for each residual type
@@ -261,12 +317,19 @@ def build_angle_penalty_jacobian(
     return np.sqrt(w_theta) * np.eye(N)
 
 
-def assemble_full_jacobian(params: ASGParams, topology: str = "1d_ring") -> np.ndarray:
+def assemble_full_jacobian(
+    params: ASGParams, 
+    topology: str = "1d_ring",
+    state: Optional[np.ndarray] = None
+) -> np.ndarray:
     """Assemble full Jacobian from all residual types.
     
     Args:
         params: ASG parameters
         topology: "1d_ring" or "2d_torus"
+        state: Optional state vector for state-dependent Jacobian.
+               If provided, uses finite differences for better accuracy.
+               If None, uses analytical block-diagonal approximation.
         
     Returns:
         Full O matrix
@@ -274,6 +337,21 @@ def assemble_full_jacobian(params: ASGParams, topology: str = "1d_ring") -> np.n
     N = params.state_layout.dimension
     weights = np.array(params.weights)
     
+    # If state provided, use state-dependent Jacobian via finite differences
+    if state is not None:
+        return _assemble_full_jacobian_state_dependent(params, state, N, weights, topology)
+    
+    # Default: use analytical block-diagonal Jacobians
+    return _assemble_full_jacobian_analytical(params, N, weights, topology)
+
+
+def _assemble_full_jacobian_analytical(
+    params: ASGParams,
+    N: int,
+    weights: np.ndarray,
+    topology: str
+) -> np.ndarray:
+    """Build analytical (state-independent) Jacobian blocks."""
     # Linguistic residuals (act on rho block)
     J_ling = build_linguistic_residual_jacobian(N, params.alpha_l, weights)
     
@@ -296,6 +374,48 @@ def assemble_full_jacobian(params: ASGParams, topology: str = "1d_ring") -> np.n
     O[2*N:3*N, N:2*N] = J_angle
     
     return O
+
+
+def _assemble_full_jacobian_state_dependent(
+    params: ASGParams,
+    state: np.ndarray,
+    N: int,
+    weights: np.ndarray,
+    topology: str
+) -> np.ndarray:
+    """Build state-dependent Jacobian using finite differences.
+    
+    This captures actual cross-term coupling between state components.
+    More accurate than analytical but slower.
+    """
+    # Define residual functions that depend on actual state
+    def linguistic_residual(s: np.ndarray) -> np.ndarray:
+        """Linguistic residual: rho_i - mean(rho)."""
+        rho = s[0:N]
+        mean_rho = np.mean(rho)
+        return rho - mean_rho
+    
+    def gradient_residual(s: np.ndarray) -> np.ndarray:
+        """Gradient residual: G - alpha_g * coupling(theta)."""
+        theta = s[N:2*N]
+        gamma = s[2*N:3*N]
+        # Simplified: use identity coupling
+        coupling = np.eye(N) @ theta
+        return gamma - params.alpha_g * coupling
+    
+    def angle_residual(s: np.ndarray) -> np.ndarray:
+        """Angle penalty residual: sum(theta) - 0."""
+        theta = s[N:2*N]
+        return np.array([np.sum(theta)])
+    
+    residuals = [linguistic_residual, gradient_residual, angle_residual]
+    
+    # Compute state-dependent Jacobian via finite differences
+    jacobian = _assemble_jacobian_finite_difference(
+        params, residuals, state, N, 4 * N
+    )
+    
+    return jacobian
 
 
 def verify_hessian_psd(hessian: np.ndarray, tol: float = 1e-10) -> bool:

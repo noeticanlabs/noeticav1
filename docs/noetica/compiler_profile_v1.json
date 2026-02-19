@@ -1,0 +1,87 @@
+{
+  "version": "noetica_compiler_profile_v1",
+  "profile_name": "default_v1",
+  "created": "2026-02-19",
+  "description": "Default compiler profile for Noetica v1.0",
+
+  "frozen_values": {
+    "ir_grammar_hash": "sha256_of_ir_grammar_v1",
+    "refinement_profile_version": "v1.0",
+    "canonical_profile_hash": "sha256_of_canonical_profile_v1",
+    "wasm_target": "wasm1",
+    "optimization_level": "O1",
+    "domain_separators": {
+      "state": "noetica_state_v1",
+      "receipt": "noetica_receipt_v1",
+      "program": "noetica_program_v1",
+      "profile": "noetica_profile_v1"
+    }
+  },
+
+  "canonical_profile": {
+    "scale": 1000,
+    "curvature_bound": 1000000,
+    "tension_bound": 1000000,
+    "budget_threshold": 1000000,
+    "refinement_epsilon": 1,
+    "truncation": "toward_zero",
+    "max_memory_pages": 65536,
+    "max_call_depth": 1024,
+    "max_program_size": 1048576
+  },
+
+  "kernel_constructs": [
+    "mint",
+    "burn",
+    "solve",
+    "repair",
+    "freeze",
+    "thaw",
+    "measure",
+    "emit_checkpoint",
+    "move",
+    "phase_match"
+  ],
+
+  "linear_types": [
+    "Budget",
+    "LockedBudget",
+    "MintCap",
+    "LoomState",
+    "FrozenState"
+  ],
+
+  "nonlinear_types": [
+    "BurnReceipt",
+    "AuthReceipt",
+    "Measurement",
+    "CheckpointReceipt",
+    "MintReceipt"
+  ],
+
+  "allowed_refinement_fragment": "QF-LRA-FP",
+
+  "wasm_abi_version": "v1.0",
+
+  "host_functions": [
+    "host.mint",
+    "host.burn",
+    "host.thaw",
+    "host.measure",
+    "host.emit_checkpoint"
+  ],
+
+  "security_policies": {
+    "no_float_in_consensus": true,
+    "linear_resource_discipline": true,
+    "decidable_refinement": true,
+    "deterministic_lowering": true,
+    "zero_cost_coherence": true
+  },
+
+  "verification": {
+    "receipt_verifier": "NK-4G",
+    "spectral_certificate": "ASG",
+    "proof_assistant": "Lean"
+  }
+}

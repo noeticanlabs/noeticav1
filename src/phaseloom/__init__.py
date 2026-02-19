@@ -43,6 +43,19 @@ from .types import (
     FixedPoint,
     StepType,
     Weights,
+    # CK-0 bridge functions
+    fixedpoint_to_debtunit_value,
+    debtunit_value_to_fixedpoint,
+    convert_to_ck0_format,
+    convert_from_ck0_format,
+    # Coh bridge
+    make_coh_object,
+    # NK-4G bridge
+    convert_plstate_to_nk4g_format,
+    convert_plreceipt_to_nk4g_format,
+    # NK-1 gate integration
+    convert_to_nk1_gate_format,
+    check_phaseloom_gate,
 )
 
 from .functor import PhaseLoomFunctor
@@ -70,4 +83,17 @@ __all__ = [
     "admissible_steps",
     # Verifier
     "LoomVerifier",
+    # CK-0 bridge
+    "fixedpoint_to_debtunit_value",
+    "debtunit_value_to_fixedpoint",
+    "convert_to_ck0_format",
+    "convert_from_ck0_format",
+    # Coh bridge
+    "make_coh_object",
+    # NK-4G bridge
+    "convert_plstate_to_nk4g_format",
+    "convert_plreceipt_to_nk4g_format",
+    # NK-1 gate integration
+    "convert_to_nk1_gate_format",
+    "check_phaseloom_gate",
 ]

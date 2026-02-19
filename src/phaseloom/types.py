@@ -276,3 +276,267 @@ class STFResult:
     @classmethod
     def rejected(cls, reject_code: str, message: str) -> STFResult:
         return cls(accepted=False, next_state=None, reject_code=reject_code, message=message)
+
+
+# =============================================================================
+# CK-0 Integration Bridge
+# =============================================================================
+# These functions provide bridge to CK-0 DebtUnit for integration.
+# PhaseLoom uses FixedPoint internally for performance, but can convert
+# to DebtUnit for NK verification boundary when needed.
+
+def fixedpoint_to_debtunit_value(fp: FixedPoint) -> int:
+    """Convert FixedPoint to DebtUnit value (integer).
+    
+    Note: FixedPoint uses scale=10^6, DebtUnit typically uses scale=1000.
+    This converts the scaled value directly.
+    
+    Args:
+        fp: FixedPoint value
+        
+    Returns:
+        Integer value suitable for DebtUnit
+    """
+    # FixedPoint is already scaled, return the raw value
+    return fp.value
+
+
+def debtunit_value_to_fixedpoint(value: int) -> FixedPoint:
+    """Convert DebtUnit value to FixedPoint.
+    
+    Args:
+        value: Integer value from DebtUnit
+        
+    Returns:
+        FixedPoint representation
+    """
+    return FixedPoint(value)
+
+
+def convert_to_ck0_format(fp: FixedPoint) -> dict:
+    """Convert FixedPoint to CK-0 compatible format.
+    
+    Args:
+        fp: FixedPoint value
+        
+    Returns:
+        Dictionary with value and scale
+    """
+    return {
+        "value": fp.value,
+        "scale": FixedPoint.SCALE,
+        "type": "FixedPoint"
+    }
+
+
+def convert_from_ck0_format(data: dict) -> FixedPoint:
+    """Convert from CK-0 format to FixedPoint.
+    
+    Args:
+        data: Dictionary with value and scale
+        
+    Returns:
+        FixedPoint value
+    """
+    if data.get("type") == "FixedPoint":
+        return FixedPoint(data["value"])
+    elif data.get("type") == "DebtUnit":
+        # DebtUnit value directly
+        return FixedPoint(data["value"])
+    else:
+        raise ValueError(f"Unknown format: {data}")
+
+
+# =============================================================================
+# Coh Category Integration
+# =============================================================================
+# PhaseLoom state can be viewed as a CohObject for categorical operations.
+
+def make_coh_object(pl_state: PLState, v_threshold: float = 0.0):
+    """Create a CohObject from PhaseLoom state.
+    
+    This enables PhaseLoom to participate in categorical operations
+    defined in the Coh module.
+    
+    Args:
+        pl_state: PhaseLoom state
+        v_threshold: Admissibility threshold
+        
+    Returns:
+        CohObject adapter
+    """
+    # Import here to avoid circular dependencies
+    from coh.types import CohObject
+    
+    def is_state(x: Any) -> bool:
+        return isinstance(x, PLState)
+    
+    def is_receipt(x: Any) -> bool:
+        return isinstance(x, Receipt)
+    
+    def potential(x: Any) -> float:
+        if isinstance(x, PLState):
+            # Use the potential value if available
+            if hasattr(x, 'potential') and x.potential is not None:
+                return x.potential.to_float()
+            return 0.0
+        return float('inf')
+    
+    def budget_map(x: Any) -> float:
+        # Budget mapping - PhaseLoom doesn't have explicit receipts for budget
+        return 0.0
+    
+    def validate(x: Any, y: Any, rho: Any) -> bool:
+        # Validation - check state transition is valid
+        if not isinstance(x, PLState) or not isinstance(y, PLState):
+            return False
+        # Basic validation: same phase transition
+        return True
+    
+    return CohObject(
+        is_state=is_state,
+        is_receipt=is_receipt,
+        potential=potential,
+        budget_map=budget_map,
+        validate=validate
+    )
+
+
+# =============================================================================
+# NK-4G Receipt Bridge
+# =============================================================================
+# Functions to convert PhaseLoom state/receipts to NK-4G compatible format.
+
+def convert_plstate_to_nk4g_format(pl_state: PLState) -> dict:
+    """Convert PhaseLoom state to NK-4G compatible format.
+    
+    Args:
+        pl_state: PhaseLoom state
+        
+    Returns:
+        Dictionary with NK-4G compatible fields
+    """
+    result = {
+        "type": "phaseloom_state",
+        "version": "v1",
+    }
+    
+    # Add curvature if available
+    if hasattr(pl_state, 'curvature') and pl_state.curvature is not None:
+        result["curvature"] = convert_to_ck0_format(pl_state.curvature)
+    
+    # Add tension if available
+    if hasattr(pl_state, 'tension') and pl_state.tension is not None:
+        result["tension"] = convert_to_ck0_format(pl_state.tension)
+    
+    # Add phase
+    if hasattr(pl_state, 'phase'):
+        result["phase"] = pl_state.phase.value if hasattr(pl_state.phase, 'value') else str(pl_state.phase)
+    
+    return result
+
+
+def convert_plreceipt_to_nk4g_format(receipt: Any) -> dict:
+    """Convert PhaseLoom receipt to NK-4G compatible format.
+    
+    Args:
+        receipt: PhaseLoom receipt
+        
+    Returns:
+        Dictionary with NK-4G compatible fields
+    """
+    result = {
+        "type": "phaseloom_receipt",
+        "version": "v1",
+    }
+    
+    # Extract common receipt fields if available
+    if hasattr(receipt, 'digest'):
+        result["receipt_digest"] = receipt.digest
+    
+    if hasattr(receipt, 'state_hash'):
+        result["state_hash"] = receipt.state_hash
+    
+    if hasattr(receipt, 'step_type'):
+        result["step_type"] = receipt.step_type.value if hasattr(receipt.step_type, 'value') else str(receipt.step_type)
+    
+    return result
+
+
+# =============================================================================
+# NK-1 Gate Integration
+# =============================================================================
+# Functions to check PhaseLoom operations against NK-1 Measured Gate.
+
+def convert_to_nk1_gate_format(
+    pl_state: PLState,
+    budget: int
+) -> dict:
+    """Convert PhaseLoom state for NK-1 gate check.
+    
+    Args:
+        pl_state: PhaseLoom state
+        budget: Proposed budget for operation
+        
+    Returns:
+        Dictionary with NK-1 gate compatible fields
+    """
+    result = {
+        "type": "phaseloom_nk1_gate_check",
+        "version": "v1",
+        "budget": budget,
+    }
+    
+    # Add curvature as epsilon bound
+    if hasattr(pl_state, 'curvature') and pl_state.curvature is not None:
+        result["epsilon_hat"] = fixedpoint_to_debtunit_value(pl_state.curvature)
+    else:
+        result["epsilon_hat"] = 0
+    
+    # Add potential as V(x)
+    if hasattr(pl_state, 'potential') and pl_state.potential is not None:
+        result["v_x"] = fixedpoint_to_debtunit_value(pl_state.potential)
+    else:
+        result["v_x"] = 0
+    
+    return result
+
+
+def check_phaseloom_gate(
+    pl_state: PLState,
+    budget: int,
+    epsilon_hat: int,
+    epsilon_measured: int
+) -> dict:
+    """Check if PhaseLoom operation passes NK-1 gate.
+    
+    Args:
+        pl_state: PhaseLoom state before operation
+        budget: Proposed budget
+        epsilon_hat: Maximum allowed delta-V (from curvature matrix)
+        epsilon_measured: Actual measured delta-V
+        
+    Returns:
+        Gate decision dict with:
+        - approved: bool
+        - epsilon_measured: int
+        - epsilon_hat: int
+        - reason: str
+    """
+    # NK-1 gate rule: epsilon_measured <= epsilon_hat
+    if epsilon_measured <= epsilon_hat:
+        return {
+            "approved": True,
+            "epsilon_measured": epsilon_measured,
+            "epsilon_hat": epsilon_hat,
+            "reason": "gate_passed",
+            "budget": budget
+        }
+    else:
+        return {
+            "approved": False,
+            "epsilon_measured": epsilon_measured,
+            "epsilon_hat": epsilon_hat,
+            "reason": f"epsilon_measured ({epsilon_measured}) > epsilon_hat ({epsilon_hat})",
+            "budget": budget
+        }

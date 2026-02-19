@@ -141,10 +141,16 @@ class CohMorphism(Generic[X, R]):
     Attributes:
         state_map: f_X: X₁ → X₂ (maps states)
         receipt_map: f_♯: Rec₁ → Rec₂ (maps receipts)
+        domain: Source CohObject
+        codomain: Target CohObject
+        delta_plus: Optional Δ⁺ for cost computation (Regime B)
+        policy_name: Optional policy name for cost computation
     """
     
     state_map: Callable[[Any], Any]
     receipt_map: Callable[[Any], Any]
+    domain: Optional[CohObject] = None  # Source object
+    codomain: Optional[CohObject] = None  # Target object
 
 
 # Helper for creating finite model objects

@@ -12,12 +12,18 @@
 ## Position in Architecture
 
 ```
+Coh (L1 Category Foundation)
+        ↓
+Coh_CK0 (CK-0 as Full Subcategory)
+        ↓
 CK-0 (Mathematical Substrate)
         ↓
 NEC (Execution Calculus) ← CK-0.5
         ↓
 NK-1 → NK-2 → NK-3
 ```
+
+**See also:** [`../coh/0_overview.md`](../coh/0_overview.md)
 
 NEC sits between the mathematical substrate (CK-0) and the runtime implementations (NK-1/2/3). It defines the **operational calculus** that the runtime actually executes.
 

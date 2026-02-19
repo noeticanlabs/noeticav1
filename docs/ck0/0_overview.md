@@ -49,6 +49,27 @@ NEC provides:
 
 ---
 
+## Relationship to Coh
+
+**See also:** [`../coh/0_overview.md`](../coh/0_overview.md)
+
+**Coh** (Category of Coherent Spaces) is the **L1 (Mathematics)** foundational category. **CK-0** is a **full subcategory** (Coh_CK0) with:
+
+- Specialized V: weighted residual norm V(x) = r̃(x)ᵀW r̃(x)
+- Specialized RV: receipts with fields (policy_id, budget, debt, residual, hash)
+- Additional constraints (gate law, budget/debt update rules)
+
+| Layer | Type | Role |
+|-------|------|------|
+| Coh | L1 Category | Mathematical foundation, type system |
+| Coh_CK0 | Full subcategory | CK-0 canonical form |
+| CK-0 | Semantic instance | Current spec as in this document |
+| NEC | Operational calculus | Execution algebra |
+
+The integration is surgical: no duplication, maximal composability. All CK-0 systems are valid Coh objects.
+
+---
+
 ## CK-0 Core Definition
 
 A system is **coherent** over a run if, for every step *k*:

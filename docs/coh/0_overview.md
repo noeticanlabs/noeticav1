@@ -2,6 +2,8 @@
 
 **Category of Coherent Spaces**
 
+**Canonical ID:** `coh.category.v1`  
+**Version:** `1.0.0`  
 **Status:** Canonical Definition  
 **Layer:** L1 (Mathematics)  
 **Depends on:** None (foundational)
@@ -57,13 +59,16 @@ into a single categorical object supporting:
 
 | Document | Content | Maps to Spec |
 |----------|---------|--------------|
-| [`1_objects.md`](1_objects.md) | 5-tuple definition, axioms A1-A3 | §1, §2 |
+| [`1_objects.md`](1_objects.md) | 5-tuple definition, axioms A1-A3, bounded-tube | §1, §2, §3 |
 | [`2_morphisms.md`](2_morphisms.md) | Morphism definition, M1-M2 | §4, §5 |
-| [`3_category.md`](3_category.md) | Identity, composition, propositions | §6 |
-| [`4_limits.md`](4_limits.md) | Products, pullbacks | §7 |
+| [`3_category.md`](3_category.md) | Identity, composition, trace closure | §6 |
+| [`4_limits.md`](4_limits.md) | Products, pullbacks | - |
 | [`5_functors.md`](5_functors.md) | Functorial time, natural transformations | §8, §9 |
-| [`6_ck0_integration.md`](6_ck0_integration.md) | Coh_CK0 subcategory | Integration |
+| [`6_ck0_integration.md`](6_ck0_integration.md) | Coh_CK0 subcategory | §8 |
 | [`7_functors_builtin.md`](7_functors_builtin.md) | Vio, Adm, Transition functors | §2 |
+| [`determinism_canon.md`](determinism_canon.md) | Determinism, serialization, proof obligations | §7, §12, §13 |
+| [`universal_invariants.md`](universal_invariants.md) | System classification (conservative/dissipative/mixed) | §10 |
+| [`module_interface_contract.md`](module_interface_contract.md) | Module surface area, receipts, test vectors | §11, §12 |
 | [`8_examples.md`](8_examples.md) | 1D actuator + observer + pullback | Examples |
 | [`9_reference_api.md`](9_reference_api.md) | Runtime API contract | Reference |
 
@@ -71,20 +76,26 @@ into a single categorical object supporting:
 
 ## Core Definitions
 
-### Object (Definition §1)
+### Object (Definition §1, §2)
 
-A Coh object is a 5-tuple:
+A Coh object can be represented in two equivalent forms:
 
+**5-tuple form (canonical):**
 ```
 S = (X, Rec, V, Δ, RV)
 ```
 
+**3-tuple form (spec v1.0.0 simplified):**
+```
+S = (X, V, RV)
+```
+
 where:
 - **X**: State space (set, optionally topological/measurable/manifold)
-- **Rec**: Receipt set (algebraic witnesses)
+- **Rec**: Receipt set (algebraic witnesses) — implicit in 3-tuple form
 - **V**: Potential functional V: X → ℝ≥0 (lower semicontinuous)
-- **Δ**: Budget map Δ: Rec → ℝ≥0
-- **RV**: Validator relation RV ⊆ X × X × Rec
+- **Δ**: Budget map Δ: Rec → ℝ≥0 — implicit in 3-tuple form (handled in RV)
+- **RV**: Validator relation RV ⊆ X × X × Rec (or predicate in spec v1.0.0)
 
 ### Morphism (Definition §4)
 

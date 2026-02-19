@@ -1,5 +1,6 @@
 # Coh_CK0 Integration
 
+**Canonical ID:** `coh.category.v1`  
 **Status:** Canonical  
 **Layer:** L1 → Subcategory
 

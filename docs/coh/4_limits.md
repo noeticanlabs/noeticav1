@@ -1,5 +1,6 @@
 # Coh Limits
 
+**Canonical ID:** `coh.category.v1`  
 **Status:** Canonical  
 **Section:** §7
 

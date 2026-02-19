@@ -1,5 +1,6 @@
 # Coh Morphisms
 
+**Canonical ID:** `coh.category.v1`  
 **Status:** Canonical  
 **Section:** §4, §5
 
@@ -16,12 +17,14 @@ f: S₁ → S₂
 is a pair:
 
 ```
-f = (f_X, f_♯)
+f = (f_X, f_R)
 ```
 
 where:
 - **f_X**: X₁ → X₂ (state map)
-- **f_♯**: Rec₁ → Rec₂ (receipt map)
+- **f_R**: Rec₁ → Rec₂ (receipt map, also written f_♯)
+
+**Note:** The notation `f_R` matches the spec v1.0.0, while `f_♯` is the alternative symbolic form.
 
 ---
 

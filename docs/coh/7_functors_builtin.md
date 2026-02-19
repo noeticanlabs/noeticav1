@@ -1,5 +1,6 @@
 # Coh Built-in Functors
 
+**Canonical ID:** `coh.category.v1`  
 **Status:** Canonical  
 **Section:** §2 (Derived Structures)
 

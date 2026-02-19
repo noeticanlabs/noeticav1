@@ -1,5 +1,6 @@
 # Coh Reference API
 
+**Canonical ID:** `coh.category.v1`  
 **Status:** Reference  
 **Purpose:** Runtime-facing Python API contract
 

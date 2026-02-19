@@ -1,5 +1,6 @@
 # Coh Examples
 
+**Canonical ID:** `coh.category.v1`  
 **Status:** Examples  
 **Purpose:** Illustrate categorical constructions
 

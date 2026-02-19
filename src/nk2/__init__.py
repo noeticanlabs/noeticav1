@@ -6,10 +6,12 @@
 # - exec_plan.py: ExecPlan + OpSpec
 # - scheduler.py: Greedy.curv.v1 scheduler with append_log
 # - failure_handling.py: Deterministic failure handling with singleton terminal rule
+# - main_loop.py: NK2Runtime per docs/nk2/8_main_loop.md
 
 from .exec_plan import ExecPlan, OpSpec, OpStatus
 from .scheduler import GreedyCurvScheduler, SchedulerMode, Batch, AppendLog
 from .failure_handling import FailureHandler, FailureType, FailureInfo
+from .main_loop import NK2Runtime, RuntimeStatus, ExecutionResult, create_runtime
 
 __version__ = "1.0.0"
 
@@ -29,4 +31,10 @@ __all__ = [
     'FailureHandler',
     'FailureType',
     'FailureInfo',
+    
+    # Main Loop
+    'NK2Runtime',
+    'RuntimeStatus',
+    'ExecutionResult',
+    'create_runtime',
 ]

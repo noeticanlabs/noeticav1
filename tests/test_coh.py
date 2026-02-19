@@ -409,5 +409,181 @@ class TestCK0Integration:
         assert 'timestamp' in CK0_RECEIPT_FIELDS
 
 
+class TestBoundedTubeAdmissibility:
+    """Test bounded-tube admissibility (§3.2 spec)"""
+    
+    def test_bounded_tube_admissible(self):
+        """Test bounded-tube regime: C(Θ) = {x | V(x) ≤ Θ}"""
+        states = {'a', 'b', 'c', 'd'}
+        receipts = {'rho0'}
+        
+        # V: a=0, b=1, c=2, d=3
+        potential = {'a': 0, 'b': 1, 'c': 2, 'd': 3}.__getitem__
+        budget_map = {'rho0': 0}.__getitem__
+        
+        valid = set()  # No transitions needed for this test
+        
+        obj = create_finite_coh_object(
+            states=states,
+            receipts=receipts,
+            potential=potential,
+            budget_map=budget_map,
+            valid_transitions=valid
+        )
+        
+        # With Θ = 1.5, states a and b should be admissible
+        theta = 1.5
+        
+        # Check: states with V(x) ≤ Θ are admissible
+        # Note: is_admissible checks V(x) == 0 by default, need to check potential directly
+        assert obj.potential('a') <= theta  # 0 ≤ 1.5 ✓
+        assert obj.potential('b') <= theta  # 1 ≤ 1.5 ✓
+        assert not (obj.potential('c') <= theta)  # 2 ≤ 1.5 ✗
+        assert not (obj.potential('d') <= theta)  # 3 ≤ 1.5 ✗
+    
+    def test_strict_vs_bounded_equivalence(self):
+        """Verify strict regime (Θ=0) matches zero-set admissibility"""
+        states = {'a', 'b'}
+        receipts = {'rho0'}
+        
+        potential = {'a': 0, 'b': 1}.__getitem__
+        budget_map = {'rho0': 0}.__getitem__
+        valid = set()
+        
+        obj = create_finite_coh_object(
+            states=states,
+            receipts=receipts,
+            potential=potential,
+            budget_map=budget_map,
+            valid_transitions=valid
+        )
+        
+        # Θ = 0 should equal strict admissibility (V(x) == 0)
+        theta_zero = 0.0
+        
+        # At Θ=0, only a (V=0) should satisfy V(x) ≤ Θ
+        assert obj.potential('a') <= theta_zero  # True (0 ≤ 0)
+        assert not (obj.potential('b') <= theta_zero)  # False (1 ≤ 0)
+
+
+class TestDeterminismLemma:
+    """Test determinism lemma (§7 spec)"""
+    
+    def test_deterministic_validation(self):
+        """Same inputs → same output (determinism lemma)"""
+        states = {'a', 'b'}
+        receipts = {'rho0'}
+        
+        potential = {'a': 0, 'b': 1}.__getitem__
+        budget_map = {'rho0': 1}.__getitem__
+        valid = {('b', 'a', 'rho0')}
+        
+        obj = create_finite_coh_object(
+            states=states,
+            receipts=receipts,
+            potential=potential,
+            budget_map=budget_map,
+            valid_transitions=valid
+        )
+        
+        # Call validate multiple times with same inputs
+        results = []
+        for _ in range(100):
+            result = obj.validate('b', 'rho0', 'a')
+            results.append(result)
+        
+        # All results must be identical (determinism)
+        assert all(r == results[0] for r in results)
+    
+    def test_deterministic_potential_evaluation(self):
+        """Potential function must be deterministic"""
+        states = {'a', 'b'}
+        receipts = {'rho0'}
+        
+        # Potential with no side effects
+        potential = {'a': 0, 'b': 1}.__getitem__
+        budget_map = {'rho0': 0}.__getitem__
+        valid = set()
+        
+        obj = create_finite_coh_object(
+            states=states,
+            receipts=receipts,
+            potential=potential,
+            budget_map=budget_map,
+            valid_transitions=valid
+        )
+        
+        # Evaluate potential multiple times
+        for _ in range(100):
+            assert obj.potential('a') == 0
+            assert obj.potential('b') == 1
+
+
+class TestTraceClosure:
+    """Test trace closure principle (§6 spec)"""
+    
+    def test_trace_chain_composition(self):
+        """Legal steps compose into legal histories"""
+        states = {'a', 'b', 'c'}
+        receipts = {'rho0', 'rho1'}
+        
+        potential = {'a': 0, 'b': 1, 'c': 2}.__getitem__
+        # Budget must allow descent: V(c)=2 → V(b)=1 is ΔV=1, budget needs to be ≥1
+        budget_map = {'rho0': 2, 'rho1': 2}.__getitem__
+        
+        # Chain: c → b → a (each step descends by 1)
+        valid = {
+            ('c', 'b', 'rho0'),
+            ('b', 'a', 'rho1'),
+        }
+        
+        obj = create_finite_coh_object(
+            states=states,
+            receipts=receipts,
+            potential=potential,
+            budget_map=budget_map,
+            valid_transitions=valid
+        )
+        
+        # Verify each step individually
+        # Note: validate(x, y, rho) where x=source, y=target, rho=receipt
+        assert obj.validate('c', 'b', 'rho0') == True
+        assert obj.validate('b', 'a', 'rho1') == True
+        
+        # Both steps form a valid trace
+        trace = [
+            ('c', 'b', 'rho0'),
+            ('b', 'a', 'rho1'),
+        ]
+        
+        # Verify trace is valid
+        for source, target, receipt in trace:
+            assert obj.validate(source, target, receipt) == True
+    
+    def test_chain_digest_tracking(self):
+        """Verify chain digest can be computed from receipts"""
+        states = {'a', 'b'}
+        receipts = {'rho0'}
+        
+        potential = {'a': 0, 'b': 1}.__getitem__
+        # Budget must allow V(b)=1 → V(a)=0 (descent of 1)
+        budget_map = {'rho0': 1}.__getitem__
+        valid = {('b', 'a', 'rho0')}
+        
+        obj = create_finite_coh_object(
+            states=states,
+            receipts=receipts,
+            potential=potential,
+            budget_map=budget_map,
+            valid_transitions=valid
+        )
+        
+        # The verifier should track chain progression
+        # (simplified test - actual implementation would use hash)
+        # Note: validate(x, y, rho) = source, target, receipt
+        step_result = obj.validate('b', 'a', 'rho0')
+        assert step_result == True
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -1,5 +1,6 @@
 # Coh Functors
 
+**Canonical ID:** `coh.category.v1`  
 **Status:** Canonical  
 **Section:** §8, §9
 

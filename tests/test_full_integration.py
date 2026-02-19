@@ -38,11 +38,20 @@ from ck0.curvature import CurvatureMatrix
 from ck0.transition import TransitionContract, TransitionDescriptor, TransitionType
 from ck0.receipts import StepReceipt, CommitReceipt, ReceiptChain
 
-# COH imports
-from coh.types import CohObject, CohMorphism, create_finite_coh_object, is_ck0_receipt
-from coh.objects import verify_faithfulness, verify_algebraic_geometric_binding
-from coh.morphisms import identity, compose, product, pullback
-from coh.functors import TimeFunctor
+# COH imports - use main import to get all exports
+from coh import (
+    CohObject,
+    CohMorphism,
+    create_finite_coh_object,
+    is_ck0_receipt,
+    verify_faithfulness,
+    verify_algebraic_geometric_binding,
+    identity,
+    compose,
+    product,
+    pullback,
+    TimeFunctor,
+)
 
 # NK-1 imports
 from nk1.policy_bundle import PolicyBundle, PolicyStatus, evaluate_nk4g_policy
